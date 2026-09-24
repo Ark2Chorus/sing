@@ -3,7 +3,7 @@
 // stale cached one. Everything the app needs (fonts, libraries, the
 // voicebank audio) is already embedded inside index.html itself, so the
 // shell list here is short.
-const CACHE_VERSION = 'ark2-chorus-v12';
+const CACHE_VERSION = 'ark2-chorus-v32';
 const APP_SHELL = [
   './',
   './index.html',
@@ -15,7 +15,10 @@ const APP_SHELL = [
 
 self.addEventListener('install', (event) => {
   event.waitUntil(
-    caches.open(CACHE_VERSION).then((cache) => cache.addAll(APP_SHELL))
+    // cache: "reload" fetches each file fresh from the site, not from the
+    // browser's HTTP cache -- otherwise a new build could precache old files.
+    caches.open(CACHE_VERSION).then((cache) =>
+      cache.addAll(APP_SHELL.map((url) => new Request(url, { cache: "reload" }))))
   );
   self.skipWaiting();
 });
