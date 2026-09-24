@@ -3,7 +3,7 @@
 // stale cached one. Everything the app needs (fonts, libraries, the
 // voicebank audio) is already embedded inside index.html itself, so the
 // shell list here is short.
-const CACHE_VERSION = 'ark2-chorus-v32';
+const CACHE_VERSION = 'ark2-chorus-v34';
 const APP_SHELL = [
   './',
   './index.html',
