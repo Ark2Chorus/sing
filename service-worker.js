@@ -3,7 +3,7 @@
 // stale cached one. Everything the app needs (fonts, libraries, the
 // voicebank audio) is already embedded inside index.html itself, so the
 // shell list here is short.
-const CACHE_VERSION = 'ark2-chorus-v56';
+const CACHE_VERSION = 'ark2-chorus-v58';
 const APP_SHELL = [
   './',
   './index.html',
@@ -49,13 +49,18 @@ self.addEventListener('fetch', (event) => {
   // Other sites (Google Drive listings, streamed songs) go straight to the
   // network -- nothing of theirs is cached here, and passing streamed audio
   // through the worker only gets in the way.
-  if (new URL(event.request.url).origin !== self.location.origin) return;
+  const url = new URL(event.request.url);
+  if (url.origin !== self.location.origin) return;
+  // The singer library and its demo (singer/) are separate pages with their
+  // own files; they're not part of the app and aren't handled here.
+  const scope = new URL('./', self.location).pathname;
+  if (url.pathname.startsWith(scope + 'singer/')) return;
 
   // Opening the app: always answer with the saved page when there is one,
   // whatever query string or path variant the phone opens it with -- so the
   // installed app starts offline. (config.ark2 and version.json aren't page
   // loads and aren't cached, so they always come fresh from the site.)
-  if (event.request.mode === 'navigate'){
+  if (event.request.mode === 'navigate' && (url.pathname === scope || url.pathname === scope + 'index.html')){
     event.respondWith(
       caches.match('./index.html').then((cached) =>
         cached || fetch(event.request).catch(() => caches.match('./')))
