@@ -3,7 +3,7 @@
 // stale cached one. Everything the app needs (fonts, libraries, the
 // voicebank audio) is already embedded inside index.html itself, so the
 // shell list here is short.
-const CACHE_VERSION = 'ark2-chorus-v48';
+const CACHE_VERSION = 'ark2-chorus-v55';
 const APP_SHELL = [
   './',
   './index.html',
@@ -11,6 +11,10 @@ const APP_SHELL = [
   './icons/icon-192.png',
   './icons/icon-512.png',
   './icons/icon-512-maskable.png',
+  // PDF.js for Music Sheet -- kept with the app so sheets open offline.
+  './vendor/pdf.min.js',
+  './vendor/pdf.worker.min.js',
+  './vendor/page-flip.browser.js',   // StPageFlip -- the book-style page turn
 ];
 
 self.addEventListener('install', (event) => {
