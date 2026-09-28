@@ -3,7 +3,7 @@
 // stale cached one. Everything the app needs (fonts, libraries, the
 // voicebank audio) is already embedded inside index.html itself, so the
 // shell list here is short.
-const CACHE_VERSION = 'ark2-chorus-v83';
+const CACHE_VERSION = 'ark2-chorus-v91';
 const APP_SHELL = [
   './',
   './index.html',
@@ -25,6 +25,34 @@ self.addEventListener('install', (event) => {
       cache.addAll(APP_SHELL.map((url) => new Request(url, { cache: "reload" }))))
   );
   self.skipWaiting();
+});
+
+// The page asks how much of the app is saved for offline ("cache-status"),
+// or asks for anything missing to be fetched again ("cache-fill"). Replies go
+// back on the MessageChannel port the page sends.
+self.addEventListener('message', (event) => {
+  const type = event.data && event.data.type;
+  if (type !== 'cache-status' && type !== 'cache-fill') return;
+  event.waitUntil((async () => {
+    const cache = await caches.open(CACHE_VERSION);
+    if (type === 'cache-fill'){
+      await Promise.all(APP_SHELL.map(async (url) => {
+        if (await cache.match(url)) return;
+        try{
+          const res = await fetch(new Request(url, { cache: 'reload' }));
+          if (res.ok) await cache.put(url, res);
+        }catch(err){ /* still offline: it stays missing */ }
+      }));
+    }
+    const found = await Promise.all(APP_SHELL.map((url) => cache.match(url)));
+    const reply = {
+      type: 'cache-status', version: CACHE_VERSION, total: APP_SHELL.length,
+      have: found.filter(Boolean).length,
+      missing: APP_SHELL.filter((url, i) => !found[i])
+    };
+    if (event.ports && event.ports[0]) event.ports[0].postMessage(reply);
+    else if (event.source) event.source.postMessage(reply);
+  })());
 });
 
 self.addEventListener('activate', (event) => {
