@@ -1,0 +1,2092 @@
+  :root{
+    --room:#14181f;
+    --room-dim:#1c212a;
+    --panel:#ffffff;
+    --panel-edge:#e2e2e2;
+    --ink:#22262c;
+    --ink-soft:#6b7078;
+    --brass:#c9a15a;
+    --brass-soft:#e3c98a;
+    --paper-glow: radial-gradient(ellipse 60% 50% at 50% 0%, rgba(201,161,90,0.18), rgba(201,161,90,0) 70%);
+    --c1:#e2725b;
+    --c2:#4fb0a5;
+    --c3:#7c83fd;
+    --c4:#e0b34d;
+    --c5:#d65b8a;
+    --c6:#6fbf73;
+    --radius:10px;
+    --font-display:Georgia, 'Iowan Old Style', 'Palatino Linotype', 'Book Antiqua', Palatino, serif;
+    --font-body:-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+    --font-mono:ui-monospace, 'SF Mono', 'Cascadia Code', 'Roboto Mono', Consolas, monospace;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    min-height:100vh;
+    background:
+      radial-gradient(circle at 15% 8%, rgba(201,161,90,0.06), transparent 40%),
+      var(--room);
+    color:#e9e6de;
+    font-family:var(--font-body);
+    padding:70px 20px 60px;
+  }
+  body.workspace-active{ padding-top:148px; padding-bottom:276px; transition:padding-bottom .2s ease; }
+  body.workspace-active.mixer-collapsed{ padding-bottom:64px; }
+  @media (max-width:700px){
+    body{ padding-top:98px; }
+    body.workspace-active{ padding-top:196px; padding-bottom:294px; }
+    body.workspace-active.mixer-collapsed{ padding-bottom:64px; }
+
+    /* Bigger touch targets — the desktop sizes are too small to tap reliably. */
+    .toggle-pill{ width:28px; height:28px; font-size:13px; }
+    .icon-btn{ width:36px; height:36px; }
+    .transport-buttons button{ width:46px; height:46px; }
+    .tab-close{ width:27px; height:27px; font-size:16px; }
+    .mixer-toggle-arrow{ font-size:11px; }
+
+    /* iOS Safari auto-zooms the page when focusing a form control smaller than
+       16px — bump this up on touch-sized screens so tapping it doesn't trigger
+       an unwanted zoom (range sliders aren't affected by this, only text-entry-
+       style controls like this dropdown). */
+    .sc-instrument{ font-size:16px; }
+
+    /* Smoother momentum scrolling on iOS for the horizontally-scrolling strips. */
+    .tabs-row, #staff-list, #score-paper{ -webkit-overflow-scrolling:touch; }
+
+    /* Reclaim horizontal space on narrow phones: body, the stand, and the score
+       paper each add their own padding, which stacks up to over 100px of pure
+       margin on a 360px-wide screen — a huge chunk of the available width that
+       could otherwise go to the actual notation. */
+    body{ padding-left:8px; padding-right:8px; }
+    .top-bar-inner{ padding-left:10px; padding-right:10px; }
+    .stand{ padding-left:8px; padding-right:8px; }
+    #score-paper.score-updating{ opacity:.55; transition:opacity .15s ease; }
+  #score-paper{ padding-left:8px; padding-right:8px; }
+    .bottom-mixer-inner{ padding-left:10px; padding-right:10px; }
+  }
+  .app{max-width:1180px;margin:0 auto;}
+
+  button{
+    font-family:var(--font-body); cursor:pointer; border-radius:8px; border:1px solid transparent;
+    font-size:13.5px; font-weight:600; transition:transform .12s ease, background .15s ease, border-color .15s ease;
+  }
+  button:active{transform:translateY(1px);}
+  .btn-ghost{
+    background:transparent; color:#cfd3da; border-color:#3a4150; padding:9px 16px;
+  }
+  .btn-ghost:hover{border-color:var(--brass); color:var(--brass-soft);}
+  .btn-brass{
+    background:var(--brass); color:#2a2110; padding:9px 18px; border-color:var(--brass);
+  }
+  .btn-brass:hover{background:var(--brass-soft);}
+
+  /* ---- Upload dropzone ---- */
+  #dropzone{
+    border:1.5px dashed #454c5b; border-radius:14px; padding:7px 24px 38px; /* content sits 7px under the top edge */
+    text-align:center; color:#9aa0aa; margin-bottom:26px;
+    background:linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0));
+    transition:border-color .15s ease, background .15s ease;
+  }
+  #dropzone.drag{border-color:var(--brass); background:rgba(201,161,90,0.07); color:#e9e6de;}
+  #dropzone p{margin:4px 0; font-size:14px;}
+  .dz-logo{
+    width:72px; height:72px; border-radius:50%; object-fit:cover; background:#fff;
+    border:2px solid var(--brass); box-shadow:0 0 0 1px rgba(0,0,0,.4), 0 4px 14px -2px rgba(201,161,90,.35);
+    margin-bottom:16px;
+  }
+  .dz-motto{
+    font-family:var(--font-display); font-size:clamp(18px, 4.5vw, 40px); line-height:1.1; color:var(--brass-soft);
+    margin:0 auto 20px; font-style:italic; white-space:nowrap;
+  }
+  #dropzone .dz-title{font-family:var(--font-display); font-size:19px; color:#f0ede4; margin-bottom:6px;}
+  .dz-shout{
+    font-family:var(--font-display); font-weight:700; font-size:clamp(22px, 5vw, 32px);
+    color:var(--brass); margin:14px 0 6px; letter-spacing:.01em;
+  }
+  /* Rotating encouragement + scripture (KJV) in place of the old
+     drop-here prompt. Cross-fades to a new random pair every 20s. */
+  .dz-inspire{
+    max-width:560px; margin:0 auto; min-height:96px;
+    transition:opacity .6s ease;
+  }
+  .dz-inspire.fading{ opacity:0; }
+  #dropzone .dz-inspire .dz-title{ font-size:clamp(17px, 4.2vw, 21px); line-height:1.3; margin:0 0 8px; }
+  #dropzone .dz-verse{
+    font-family:var(--font-display); font-style:italic; font-size:13.5px; line-height:1.5;
+    color:var(--brass-soft); margin:0;
+  }
+  .dz-verse cite{
+    display:block; margin-top:4px; font-style:normal; font-family:var(--font-mono);
+    font-size:11px; letter-spacing:.06em; color:var(--brass);
+  }
+  .dz-row{display:flex; gap:10px; justify-content:center; margin-top:16px; flex-wrap:wrap;}
+  .dz-hint{font-size:12px; color:#6b7280; margin-top:10px; font-family:var(--font-mono);}
+
+  /* ---- Fixed top bar: tabs + transport ---- */
+  #workspace{display:none;}
+  #workspace.active{display:block;}
+
+  .top-bar{
+    position:fixed; top:0; left:0; right:0; z-index:100;
+    background:rgba(20,24,31,0.97); backdrop-filter:blur(6px);
+    border-bottom:1px solid #262c38;
+  }
+  .top-bar-inner{max-width:1180px; margin:0 auto; padding:10px 20px 12px;}
+  /* On the home screens there's no transport row under the tab strip, so
+     drop the strip's divider and bottom spacing -- the page (and the
+     playlist) starts right under the logo. The body's top padding follows
+     the bar's real height (syncTopBarPadding), so this shrinks it too. */
+  body:not(.workspace-active) .tabs-row{ padding-bottom:0; margin-bottom:0; border-bottom:0; }
+  body:not(.workspace-active) .top-bar-inner{ padding-bottom:10px; }
+
+  .loading-overlay{
+    position:fixed; inset:0; z-index:300; display:flex; flex-direction:column;
+    align-items:center; justify-content:center; gap:16px;
+    background:rgba(20,24,31,0.82); backdrop-filter:blur(3px);
+  }
+  .loading-logo{
+    width:76px; height:76px; border-radius:50%; object-fit:cover; background:#fff;
+    border:2px solid var(--brass); box-shadow:0 0 0 1px rgba(0,0,0,.4), 0 4px 20px -2px rgba(201,161,90,.45);
+    animation:loading-spin 0.7s linear infinite;
+  }
+  .loading-text{
+    font-family:var(--font-mono); font-size:18px; letter-spacing:.14em; text-transform:uppercase;
+    color:var(--brass-soft);
+  }
+  #loading-percent{ font-weight:700; color:#f4f1e8; font-variant-numeric:tabular-nums; }
+  .loading-dots span{
+    display:inline-block; opacity:.2; animation:loading-dot-pulse 1.2s infinite;
+  }
+  .loading-dots span:nth-child(1){ animation-delay:0s; }
+  .loading-dots span:nth-child(2){ animation-delay:.2s; }
+  .loading-dots span:nth-child(3){ animation-delay:.4s; }
+  @keyframes loading-dot-pulse{
+    0%, 60%, 100%{ opacity:.2; }
+    30%{ opacity:1; }
+  }
+  @keyframes loading-spin{
+    from{ transform:rotate(0deg); }
+    to{ transform:rotate(360deg); }
+  }
+
+  .topbar-brand{
+    display:flex; align-items:center; gap:8px; flex-shrink:0;
+    padding-right:12px; margin-right:6px; border-right:1px solid #2b3140;
+    font-family:var(--font-display); font-weight:600; font-size:13.5px; color:#f0ede4;
+    white-space:nowrap;
+  }
+  button.topbar-brand{
+    background:none; border:0; border-right:1px solid #2b3140; border-radius:0; cursor:pointer;
+    padding-top:3px; padding-bottom:3px;
+  }
+  /* The logo and menu stay put while the tabs scroll sideways under them. */
+  .tabs-row > .topbar-brand{
+    position:sticky; left:0; z-index:3; background:#14181f;
+    box-shadow:8px 0 8px -6px rgba(0,0,0,.6);
+  }
+  button.topbar-brand:hover span, button.topbar-brand[aria-expanded="true"] span{ color:var(--brass-soft); }
+  button.topbar-brand:focus-visible{ outline:2px solid var(--brass); outline-offset:2px; border-radius:6px; }
+  .topbar-caret{
+    width:9px; height:6px; fill:none; stroke:var(--brass); stroke-width:1.6;
+    stroke-linecap:round; stroke-linejoin:round; transition:transform .15s ease;
+  }
+  button.topbar-brand[aria-expanded="true"] .topbar-caret{ transform:rotate(180deg); }
+  /* Player switcher, opened from the logo. Fixed-positioned under the logo by
+     JS, and kept outside the tab strip, whose horizontal scroll would clip it. */
+  .app-menu{
+    position:fixed; z-index:2000; min-width:210px; padding:6px;
+    background:#1d222c; border:1px solid #3a4150; border-radius:12px;
+    box-shadow:0 14px 34px rgba(0,0,0,.65);
+  }
+  .app-menu[hidden]{ display:none; }
+  .app-menu-item{
+    display:grid; grid-template-columns:22px 1fr; column-gap:10px; align-items:center;
+    width:100%; padding:9px 10px; border:0; border-radius:8px; background:none;
+    color:#e9e6de; font:inherit; text-align:left; cursor:pointer;
+  }
+  .app-menu-item + .app-menu-item{ margin-top:2px; }
+  .app-menu-item svg{
+    grid-row:span 2; width:20px; height:20px; fill:none; stroke:#9aa0aa; stroke-width:1.7;
+    stroke-linecap:round; stroke-linejoin:round;
+  }
+  .app-menu-item span{ font-family:var(--font-mono); font-size:12.5px; font-weight:700; letter-spacing:.03em; }
+  .app-menu-item small{ font-size:11px; color:#6b7280; }
+  .app-menu-item:hover{ background:#2b3140; }
+  .app-menu-item.active{ background:rgba(201,161,90,.14); }
+  .app-menu-item.active span{ color:var(--brass-soft); }
+  .app-menu-item.active svg{ stroke:var(--brass); }
+  .topbar-brand-logo{
+    width:24px; height:24px; border-radius:50%; object-fit:cover; background:#fff;
+    border:1.5px solid var(--brass); box-shadow:0 2px 6px -1px rgba(0,0,0,.5);
+  }
+
+  .tabs-row{
+    display:flex; align-items:center; gap:6px; overflow-x:auto;
+    padding-bottom:9px; margin-bottom:9px; border-bottom:1px solid #232a36;
+  }
+  .tab-btn{
+    display:flex; align-items:center; gap:8px; white-space:nowrap; flex-shrink:0;
+    padding:7px 8px 7px 12px; background:#1c212a; border:1px solid #2b3140; color:#9aa0aa;
+    border-radius:8px 8px 0 0; font-size:12.5px; font-weight:600;
+  }
+  .tab-btn.active{background:#232a36; color:#f0ede4; border-color:var(--brass);}
+  .tab-close{
+    width:21px; height:21px; border-radius:50%; display:flex; align-items:center; justify-content:center;
+    font-size:16px; font-weight:700; color:#e2544f; background:rgba(226,84,79,0.12);
+  }
+  .tab-close:hover{background:#e2544f; color:#fff;}
+  .tab-add-btn{
+    flex-shrink:0; padding:7px 12px; background:transparent; border:1px dashed #3a4150; color:#9aa0aa;
+    border-radius:8px; font-size:12.5px; font-weight:600;
+  }
+  .tab-add-btn:hover{border-color:var(--brass); color:var(--brass-soft);}
+
+  /* Internet connection: a small Wi-Fi mark at the right of the top bar on
+     the home screens. Green when online; red and struck through offline. */
+  .net-status{
+    position:sticky; right:0; margin-left:auto; flex:0 0 auto;
+    width:30px; height:30px; display:flex; align-items:center; justify-content:center;
+    border-radius:50%; background:rgba(20,24,31,.97); cursor:default;
+  }
+  body.workspace-active .net-status{ display:none; }
+  /* Offline readiness, beside the Wi-Fi mark: is the app saved on this
+     device? Green tick = ready; amber arrow = still saving; red ! = not all
+     saved (tap to try again). */
+  .off-status{
+    position:sticky; right:30px; margin-left:auto; flex:0 0 auto;
+    width:30px; height:30px; padding:0; border:0; border-radius:50%;
+    display:flex; align-items:center; justify-content:center;
+    background:rgba(20,24,31,.97); cursor:pointer;
+  }
+  .off-status + .off-tip + .net-status{ margin-left:0; }
+  body.workspace-active .off-status{ display:none; }
+  .off-status svg{ width:19px; height:19px; fill:none; stroke-width:1.9; stroke-linecap:round; stroke-linejoin:round; }
+  .off-status .off-phone, .off-status .off-bar{ stroke:#6b7280; }
+  .off-status .off-ok, .off-status .off-down, .off-status .off-bad{ display:none; }
+  .off-status[data-state="ready"] .off-phone, .off-status[data-state="ready"] .off-bar,
+  .off-status[data-state="ready"] .off-ok{ stroke:#4ade80; }
+  .off-status[data-state="ready"] .off-ok{ display:inline; }
+  .off-status[data-state="saving"] .off-phone, .off-status[data-state="saving"] .off-bar,
+  .off-status[data-state="saving"] .off-down{ stroke:#f0c674; }
+  .off-status[data-state="saving"] .off-down{ display:inline; }
+  .off-status[data-state="saving"] svg{ animation:off-pulse 1.4s ease-in-out infinite; }
+  .off-status[data-state="missing"] .off-phone, .off-status[data-state="missing"] .off-bar,
+  .off-status[data-state="missing"] .off-bad{ stroke:#f87171; }
+  .off-status[data-state="missing"] .off-bad{ display:inline; }
+  @keyframes off-pulse{ 50%{ opacity:.35; } }
+  .off-tip{
+    position:fixed; top:52px; right:10px; z-index:150; max-width:260px;
+    padding:8px 11px; border-radius:9px; background:#1c212a; border:1px solid #3a4150;
+    color:#e9e6de; font-size:12.5px; line-height:1.4; box-shadow:0 8px 22px rgba(0,0,0,.5);
+  }
+  .off-tip[hidden]{ display:none; }
+  .net-status svg{ width:19px; height:19px; fill:none; stroke-width:2.1; stroke-linecap:round; }
+  .net-status .net-arc{ stroke:#4ade80; transition:stroke .3s; }
+  .net-status .net-dot{ fill:#4ade80; stroke:none; transition:fill .3s; }
+  .net-status .net-slash{ stroke:#f87171; stroke-width:2.3; display:none; }
+  .net-status.offline .net-arc{ stroke:#5b6270; }
+  .net-status.offline .net-dot{ fill:#5b6270; }
+  .net-status.offline .net-slash{ display:inline; }
+  .net-status.checking .net-arc{ stroke:#6b7280; }
+  .net-status.checking .net-dot{ fill:#6b7280; }
+
+  .transport{
+    display:flex; align-items:center; gap:14px; flex-wrap:wrap;
+  }
+  .transport-buttons{display:flex; gap:8px;}
+  .transport-buttons button{
+    width:42px; height:42px; border-radius:50%; font-size:17px;
+    display:flex; align-items:center; justify-content:center; border:none;
+    position:relative; overflow:hidden;
+    background:
+      radial-gradient(circle at 32% 28%, rgba(255,255,255,.85) 0%, rgba(255,255,255,0) 32%),
+      radial-gradient(circle at 50% 105%, rgba(0,0,0,.35) 0%, rgba(0,0,0,0) 55%),
+      linear-gradient(180deg, #8fe25a 0%, #4fae1e 55%, #2f7d10 100%);
+    box-shadow:
+      0 3px 6px rgba(0,0,0,.5),
+      inset 0 1px 1px rgba(255,255,255,.6),
+      inset 0 -3px 5px rgba(0,0,0,.35);
+    color:#fff; text-shadow:0 1px 1px rgba(0,0,0,.3);
+  }
+  #play-btn{ padding-left:3px; } /* visually centers the play triangle glyph */
+  .transport-buttons button:hover{ filter:brightness(1.08); }
+  .transport-buttons button.stop-btn{
+    background:
+      radial-gradient(circle at 32% 28%, rgba(255,255,255,.85) 0%, rgba(255,255,255,0) 32%),
+      radial-gradient(circle at 50% 105%, rgba(0,0,0,.35) 0%, rgba(0,0,0,0) 55%),
+      linear-gradient(180deg, #ef6b63 0%, #cc2e26 55%, #8f1611 100%);
+  }
+  .transport-buttons button.stop-btn:hover{ filter:brightness(1.08); }
+  .transport-buttons button:disabled{opacity:.45; cursor:wait; background:#3a4150;}
+  /* Secondary transport control (metronome). Smaller and
+     flat so play/stop stay the obvious primary pair. */
+  .transport-buttons{ align-items:center; flex-wrap:wrap; }
+  .transport-buttons button.aux-btn{
+    width:32px; height:32px; font-size:13px; color:#cfd3da;
+    background:rgba(35,42,54,.8); border:1px solid #3a4150;
+  }
+  .transport-buttons button.aux-btn:hover{ border-color:var(--brass); color:var(--brass-soft); filter:none; }
+  .transport-buttons button.aux-btn[aria-pressed="true"]{
+    background:var(--brass); border-color:var(--brass); color:var(--room);
+  }
+
+  .progress-wrap{flex:1; min-width:160px;}
+  .progress-wrap[hidden]{ display:none !important; }
+  /* Progress is a ring around Play instead of a bar: it fills clockwise from
+     the top as the piece plays. JS sets stroke-dashoffset. */
+  .play-wrap{ position:relative; display:flex; flex:0 0 auto; margin:0 4px; }
+  .play-ring{
+    position:absolute; left:-6px; top:-6px; width:calc(100% + 12px); height:calc(100% + 12px);
+    transform:rotate(-90deg); pointer-events:none; overflow:visible;
+  }
+  .play-ring circle{ fill:none; stroke-width:3.2; }
+  .play-ring .ring-bg{ stroke:#3a4150; }
+  .play-ring .ring-fg{
+    stroke:#29a3ff; stroke-linecap:round;
+    stroke-dasharray:150.8; stroke-dashoffset:150.8; /* 2 * pi * 24 -- empty */
+    filter:drop-shadow(0 0 3px rgba(41,163,255,.55));
+    transition:stroke-dashoffset .25s linear;
+  }
+  /* Stop shows the time left while a piece is under way. */
+  .transport-buttons button.stop-btn.counting{
+    font-family:var(--font-mono); font-size:11px; font-weight:700; letter-spacing:-.02em;
+    padding:0;
+  }
+  /* Phones: the progress bar gives way (down to ~60px) so the tempo control
+     stays up on the same row as Play/Stop instead of dropping below. */
+  @media (max-width:700px){
+    .transport{ gap:10px; }
+    .progress-wrap{ flex:1 1 60px; min-width:60px; }
+  }
+  /* Narrow phones: squeeze a little more so Play/Stop, the progress bar and
+     the tempo still share one row -- the zoom buttons wrap below instead. */
+  @media (max-width:430px){
+    .top-bar-inner{ padding-left:12px; padding-right:12px; }
+    .transport{ gap:8px; }
+    .transport-buttons{ gap:6px; }
+    .transport-buttons button{ width:40px; height:40px; font-size:15px; }
+    .transport-buttons button.aux-btn{ width:32px; height:32px; }
+    .progress-wrap{ flex-basis:50px; min-width:50px; }
+    .tempo-box > span:first-child{ display:none; } /* the note-equals label -- "72 bpm" already says it */
+    .transport .tempo-box{ flex-basis:140px; min-width:140px; }
+    .transport #tempo-slider{ min-width:0; }
+    .time-readout{ font-size:9.5px; }
+  }
+  /* Narrowest phones: the progress bar is too short for two times side by
+     side, so it shows just the elapsed time. */
+  @media (max-width:380px){
+    #time-total{ display:none; }
+  }
+  .progress-track{
+    height:6px; background:#2b3140; border-radius:4px; position:relative; cursor:ew-resize; overflow:hidden;
+    touch-action:none;
+  }
+  .progress-fill{height:100%; background:var(--brass); width:0%; border-radius:4px;}
+  .time-readout{font-family:var(--font-mono); font-size:11.5px; color:#9aa0aa; margin-top:6px; display:flex; justify-content:space-between;}
+
+  .tempo-box{display:flex; align-items:center; gap:8px; font-family:var(--font-mono); font-size:12px; color:#cfd3da;}
+  /* Tempo slider: a thick track that fills up to the handle (--pct, set by
+     JS) and a big gold handle that's easy to grab with a thumb. */
+  #tempo-slider{
+    --pct:37%;
+    -webkit-appearance:none; appearance:none; background:transparent;
+    width:130px; height:32px; margin:0; padding:0; cursor:pointer; touch-action:none;
+  }
+  #tempo-slider:focus{ outline:none; }
+  #tempo-slider:focus-visible{ outline:2px solid var(--brass); outline-offset:3px; border-radius:8px; }
+  #tempo-slider::-webkit-slider-runnable-track{
+    height:8px; border-radius:4px;
+    background:linear-gradient(90deg, var(--brass) 0, var(--brass-soft) var(--pct), #2b3140 var(--pct), #2b3140 100%);
+    box-shadow:inset 0 1px 2px rgba(0,0,0,.5);
+  }
+  #tempo-slider::-moz-range-track{ height:8px; border-radius:4px; background:#2b3140; }
+  #tempo-slider::-moz-range-progress{ height:8px; border-radius:4px; background:linear-gradient(90deg, var(--brass), var(--brass-soft)); }
+  #tempo-slider::-webkit-slider-thumb{
+    -webkit-appearance:none; appearance:none;
+    width:24px; height:24px; margin-top:-8px; border-radius:50%;
+    background:radial-gradient(circle at 35% 30%, #fffdf6 0%, #e3c98a 45%, #b88d44 100%);
+    border:2px solid #14181f; box-shadow:0 0 0 1px var(--brass), 0 3px 8px rgba(0,0,0,.6);
+    transition:transform .12s ease, box-shadow .12s ease;
+  }
+  #tempo-slider::-moz-range-thumb{
+    width:20px; height:20px; border-radius:50%;
+    background:radial-gradient(circle at 35% 30%, #fffdf6 0%, #e3c98a 45%, #b88d44 100%);
+    border:2px solid #14181f; box-shadow:0 0 0 1px var(--brass), 0 3px 8px rgba(0,0,0,.6);
+  }
+  #tempo-slider:active::-webkit-slider-thumb{
+    transform:scale(1.15); box-shadow:0 0 0 1px var(--brass), 0 0 0 6px rgba(201,161,90,.25), 0 3px 8px rgba(0,0,0,.6);
+  }
+  #tempo-slider:active::-moz-range-thumb{ box-shadow:0 0 0 1px var(--brass), 0 0 0 6px rgba(201,161,90,.25); }
+  @media (max-width:560px){
+    /* On phones the tempo row gets the room: the slider stretches and its
+       handle is thumb-sized. */
+    .tempo-box{ flex:1 1 150px; min-width:150px; gap:6px; }
+    #tempo-slider{ flex:1 1 auto; width:auto; min-width:80px; height:44px; }
+    #tempo-slider::-webkit-slider-runnable-track{ height:10px; border-radius:5px; }
+    #tempo-slider::-webkit-slider-thumb{ width:30px; height:30px; margin-top:-10px; }
+    #tempo-slider::-moz-range-track, #tempo-slider::-moz-range-progress{ height:10px; border-radius:5px; }
+    #tempo-slider::-moz-range-thumb{ width:26px; height:26px; }
+    .tempo-box .tempo-val{ font-size:13px; }
+  }
+  .tempo-box .tempo-val{min-width:52px; text-align:right; white-space:nowrap;}
+
+  .zoom-controls{display:flex; align-items:center; gap:6px; margin-left:auto;}
+  .zoom-val{
+    font-family:var(--font-mono); font-size:11.5px; color:#cfd3da; min-width:34px;
+    text-align:center; font-variant-numeric:tabular-nums;
+  }
+  .icon-btn{
+    width:30px; height:30px; border-radius:7px; background:#232a36; border:1px solid #333c4b;
+    color:#cfd3da; display:flex; align-items:center; justify-content:center; font-size:15px; font-weight:700;
+  }
+  .icon-btn:hover{border-color:var(--brass); color:var(--brass-soft);}
+
+  /* ---- One transport row on every screen ----
+     Play / Stop / Metronome, the tempo and the zoom always share a single
+     line. Everything keeps its size except the tempo slider, which takes
+     whatever width is left -- long on a desktop, shorter on a phone. */
+  .transport{ flex-wrap:nowrap; }
+  .transport .transport-buttons{ flex:0 0 auto; flex-wrap:nowrap; } /* never squeezed or wrapped */
+  .transport .tempo-box{ flex:1 1 auto; min-width:0; }
+  .transport #tempo-slider{ flex:1 1 auto; width:auto; min-width:44px; max-width:420px; }
+  .transport .zoom-controls{ flex:0 0 auto; margin-left:auto; }
+  .tempo-val small{ font-size:inherit; }
+  /* The bpm sits inside the knob and rides with it; - and + at the ends
+     nudge the tempo by one. */
+  .tempo-box .tempo-track{ position:relative; flex:1 1 auto; min-width:0; display:flex; align-items:center; }
+  .tempo-box .tempo-track #tempo-slider{ flex:1 1 auto; width:100%; max-width:none; }
+  .tempo-box .tempo-track .tempo-val{
+    position:absolute; z-index:2; top:50%; left:0; transform:translate(-50%, -50%);
+    min-width:0 !important; width:auto; text-align:center; pointer-events:none;
+    display:block !important; font:800 12px/1 var(--font-mono) !important; color:#141008 !important;
+    letter-spacing:-.03em; text-shadow:0 1px 0 rgba(255,255,255,.35);
+  }
+  /* A square knob, wide enough for three digits. */
+  .tempo-box .tempo-track #tempo-slider::-webkit-slider-thumb{
+    width:36px; height:24px; margin-top:-8px; border-radius:6px;
+    background:linear-gradient(180deg, #fff6dc 0%, #e8cd8e 55%, #c9a15a 100%);
+    border:1px solid #14181f; box-shadow:0 0 0 1px var(--brass), 0 3px 8px rgba(0,0,0,.6);
+  }
+  .tempo-box .tempo-track #tempo-slider::-moz-range-thumb{
+    width:34px; height:22px; border-radius:6px;
+    background:linear-gradient(180deg, #fff6dc 0%, #e8cd8e 55%, #c9a15a 100%);
+    border:1px solid #14181f; box-shadow:0 0 0 1px var(--brass), 0 3px 8px rgba(0,0,0,.6);
+  }
+  .tempo-box .tempo-track #tempo-slider:active::-webkit-slider-thumb{ transform:scale(1.08); }
+  /* - / + flash green: the button, the knob and its number. */
+  .tempo-step.flash{ animation:tempo-flash-btn .5s ease-out; }
+  .tempo-track.flash #tempo-slider::-webkit-slider-thumb{ animation:tempo-flash-knob .5s ease-out; }
+  .tempo-track.flash #tempo-slider::-moz-range-thumb{ animation:tempo-flash-knob .5s ease-out; }
+  @keyframes tempo-flash-btn{
+    0%{ background:#4ade80; border-color:#4ade80; color:#0f2a18; box-shadow:0 0 0 4px rgba(74,222,128,.35); }
+    100%{ background:#232a36; border-color:#3a4150; color:#e9e6de; box-shadow:0 0 0 0 rgba(74,222,128,0); }
+  }
+  @keyframes tempo-flash-knob{
+    0%{ background:#86efac; box-shadow:0 0 0 1px #4ade80, 0 0 12px 3px rgba(74,222,128,.7); }
+    100%{ background:linear-gradient(180deg, #fff6dc 0%, #e8cd8e 55%, #c9a15a 100%); box-shadow:0 0 0 1px var(--brass), 0 3px 8px rgba(0,0,0,.6); }
+  }
+  .tempo-box .tempo-track .tempo-val small{ display:none; }
+  .tempo-step{
+    flex:0 0 auto; width:24px; height:24px; padding:0; border-radius:50%; cursor:pointer;
+    border:1px solid #3a4150; background:#232a36; color:#e9e6de;
+    font:700 15px/1 var(--font-mono); display:flex; align-items:center; justify-content:center;
+  }
+  .tempo-step:hover{ border-color:var(--brass); color:var(--brass-soft); }
+  .tempo-step:disabled{ opacity:.4; cursor:default; }
+  @media (max-width:560px){
+    .transport{ gap:8px; }
+    .transport .zoom-controls{ gap:3px; }
+    .transport .icon-btn{ width:30px; height:30px; }
+    .transport .zoom-val{ min-width:30px; font-size:11px; }
+    /* "72" over a small "bpm" -- half the width of "72 bpm" in a row */
+    .tempo-box .tempo-val{
+      min-width:0; display:flex; flex-direction:column; align-items:center; line-height:1.05;
+    }
+    .tempo-val small{ font-size:8.5px; color:#8b93a7; letter-spacing:.05em; }
+  }
+  @media (max-width:380px){
+    .transport{ gap:6px; }
+    .transport-buttons button{ width:36px; height:36px; font-size:14px; }
+    .transport-buttons button.aux-btn{ width:30px; height:30px; }
+    .transport #tempo-slider::-webkit-slider-thumb{ width:24px; height:24px; margin-top:-7px; }
+    .transport #tempo-slider::-moz-range-thumb{ width:20px; height:20px; }
+  }
+
+  /* ---- Score stand ---- */
+  .stand{
+    background:var(--paper-glow), var(--room-dim);
+    border-radius:16px; padding:22px 22px 16px;
+    border:1px solid #262c38;
+  }
+  .stand-title{margin-bottom:14px;}
+  .piece-name{font-family:var(--font-display); font-size:20px; color:#f4f1e8; font-weight:600;}
+
+  #score-paper{
+    background:var(--panel); border-radius:8px; padding:18px 20px 26px;
+    box-shadow:0 12px 30px rgba(0,0,0,.35), 0 1px 0 var(--panel-edge) inset;
+    overflow-x:auto; cursor:pointer;
+  }
+  #osmd-container{min-height:120px;}
+
+  /* ---- Fixed bottom bar: mixer ---- */
+  .bottom-mixer{
+    position:fixed; bottom:0; left:0; right:0; z-index:160; /* above the lyrics view, so Hide/Show Controls stays reachable */
+    background:rgba(20,24,31,0.80); backdrop-filter:blur(6px);
+    border-top:1px solid #262c38;
+    transition:transform .2s ease, height .25s ease;
+  }
+  .bottom-mixer.resizing{ transition:none; }
+  .resize-handle{
+    height:14px; margin-top:-7px; cursor:ns-resize; display:flex; align-items:center; justify-content:center;
+    touch-action:none;
+  }
+  .resize-handle span{
+    width:44px; height:4px; border-radius:3px; background:#3a4150; display:block;
+  }
+  .resize-handle:hover span, .bottom-mixer.resizing .resize-handle span{ background:var(--brass); }
+  .bottom-mixer.collapsed .resize-handle{ display:none; }
+  .bottom-mixer-inner{max-width:1180px; margin:0 auto; padding:10px 20px 14px; overflow-y:auto;}
+  .rail-title-toggle{
+    position:absolute; top:-24px; left:50%; transform:translateX(-50%); z-index:5;
+    font-family:var(--font-mono); font-size:10.5px; letter-spacing:.07em; text-transform:uppercase;
+    color:#cfd3da; background:rgba(35,42,54,0.72); backdrop-filter:blur(4px); border:1px solid #3a4150; border-bottom:none;
+    padding:8px 18px 6px; cursor:pointer; white-space:nowrap;
+    -webkit-user-select:none; user-select:none; -webkit-touch-callout:none; touch-action:manipulation;
+    clip-path: polygon(9% 0%, 91% 0%, 100% 100%, 0% 100%);
+    display:flex; align-items:center; gap:6px;
+  }
+  .rail-title-toggle:hover{ color:var(--brass-soft); border-color:var(--brass); }
+  .mixer-toggle-arrow{ font-size:9.5px; transition:transform .15s ease; }
+  .rail-title-toggle:active{ transform:translateX(-50%) translateY(1px); }
+
+  .bottom-mixer.collapsed #staff-list{ max-height:0; opacity:0; margin-top:0; }
+  .bottom-mixer.collapsed .bottom-mixer-inner{padding-bottom:10px;}
+
+  #staff-list{
+    display:flex; gap:8px; overflow-x:auto; overflow-y:hidden; padding-bottom:2px; align-items:stretch;
+    justify-content:center; justify-content:safe center;
+    max-height:320px; opacity:1; margin-top:0;
+    transition:max-height .28s ease, opacity .2s ease;
+  }
+
+  .staff-card{
+    background:linear-gradient(180deg, #20262f 0%, #171b22 100%);
+    border:1px solid #2b3140; border-top:3px solid var(--stc, var(--brass));
+    border-radius:6px 6px 8px 8px; padding:8px 6px 10px; width:90px; flex-shrink:0;
+    display:flex; flex-direction:column; align-items:center; gap:7px;
+    box-shadow:inset 0 1px 0 rgba(255,255,255,0.04);
+    transition:box-shadow .15s ease;
+  }
+  .staff-card.playing{
+    box-shadow:inset 0 1px 0 rgba(255,255,255,0.04), 0 0 0 1px rgba(160,160,160,.5), 0 0 14px -3px rgba(160,160,160,.6);
+  }
+
+  .sc-led{
+    width:7px; height:7px; border-radius:50%; background:#2f9e4f;
+    box-shadow:0 0 4px 0.5px rgba(47,158,79,.6), inset 0 1px 1px rgba(0,0,0,.3);
+    transition:background .1s, box-shadow .1s;
+  }
+  .staff-card.playing .sc-led{ background:#e0403f; box-shadow:0 0 7px 1.5px #e0403f; }
+
+  .sc-name{
+    font-size:10px; font-weight:700; text-align:center; color:#c7cbd3; line-height:1.25;
+    min-height:24px; overflow:hidden; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical;
+    letter-spacing:.01em;
+  }
+
+  .sc-instrument{
+    width:100%; font-family:var(--font-mono); font-size:9.5px; color:#cfd3da;
+    background:#1c212a; border:1px solid #2b3140; border-radius:5px; padding:3px 2px;
+    text-align:center; cursor:pointer; margin-top:-4px;
+  }
+  .sc-instrument:hover{ border-color:var(--stc, var(--brass)); }
+  .sc-inst-wrap{ position:relative; width:100%; }
+  .sc-inst-wrap.sung .sc-instrument{ padding-left:17px; }
+  .sc-inst-ico{
+    position:absolute; left:3px; top:50%; transform:translateY(-50%); margin-top:-2px;
+    width:14px; height:14px; pointer-events:none; color:var(--stc, var(--brass));
+  }
+  .sc-inst-ico[hidden]{ display:none; }
+  .sc-inst-ico svg{ width:14px; height:14px; display:block; fill:none; stroke:currentColor; stroke-width:1.5; stroke-linecap:round; stroke-linejoin:round; }
+  .sc-inst-ico .m{ fill:currentColor; }
+  .sc-inst-ico .w{ opacity:.9; }
+  body.notes-playing .sc-inst-ico .w1{ animation:sing-wave 1s ease-in-out infinite; }
+  body.notes-playing .sc-inst-ico .w2{ animation:sing-wave 1s ease-in-out .25s infinite; }
+  @keyframes sing-wave{ 0%, 100%{ opacity:.25; } 50%{ opacity:1; } }
+  @media (prefers-reduced-motion: reduce){ body.notes-playing .sc-inst-ico .w{ animation:none; } }
+  .sc-instrument:disabled{ opacity:.5; cursor:wait; }
+
+  .sc-toggles{display:flex; gap:4px; justify-content:center;}   /* Solo only: to silence a part, pull its fader down */
+  .toggle-pill.solo-btn{ width:auto; padding:0 10px; border-radius:12px; font-size:11px; letter-spacing:.03em; }
+  .toggle-pill{
+    width:22px; height:22px; padding:0; font-family:var(--font-mono); font-size:12px; font-weight:700;
+    border-radius:50%; background:#232a36; border:1px solid #333c4b; color:#c7cbd3;
+    display:flex; align-items:center; justify-content:center;
+    box-shadow:inset 0 1px 3px rgba(0,0,0,.45), 0 0 0 2px rgba(139,145,154,0.3);
+  }
+  .toggle-pill.on-mute{
+    background:rgba(224,64,63,0.35); border-color:rgba(224,64,63,0.75); color:#ffd9d9;
+    box-shadow:inset 0 1px 3px rgba(0,0,0,.5), 0 0 7px -1px rgba(160,160,160,.6);
+  }
+  /* Singing icon on Solo buttons in the lyrics view: four bars in the voice's
+     colour, moving while the notes play. The lead voice's is locked. */
+  .toggle-pill.solo-btn.singing{
+    background:color-mix(in srgb, var(--stc, #4ade80) 18%, #1b2029);
+    border-color:var(--stc, #4ade80); color:var(--stc, #4ade80);
+    box-shadow:0 0 8px -2px var(--stc, #4ade80);
+  }
+  .toggle-pill.solo-btn.lead{ cursor:default; }
+  .sing-ico{ display:inline-flex; align-items:flex-end; gap:2px; height:12px; }
+  .sing-ico i{ display:block; width:3px; height:40%; border-radius:1.5px; background:currentColor;
+    animation:sing-bar .9s ease-in-out infinite; animation-play-state:paused; }
+  .sing-ico i:nth-child(2){ animation-delay:-.3s; height:80%; }
+  .sing-ico i:nth-child(3){ animation-delay:-.6s; height:60%; }
+  .sing-ico i:nth-child(4){ animation-delay:-.15s; height:30%; }
+  body.notes-playing .sing-ico i{ animation-play-state:running; }
+  @keyframes sing-bar{ 0%, 100%{ height:25%; } 50%{ height:100%; } }
+  @media (prefers-reduced-motion: reduce){ .sing-ico i{ animation:none; } }
+  .toggle-pill.on-solo{
+    background:rgba(58,138,74,0.35); border-color:rgba(92,194,108,0.75); color:#daffe0;
+    box-shadow:inset 0 1px 3px rgba(0,0,0,.35), 0 0 7px -1px rgba(160,160,160,.6);
+  }
+
+  .ch-fader-row{display:flex; align-items:center; justify-content:center; gap:6px;}
+
+  .vu-meter{
+    width:6px; height:var(--fader-h, 98px); border-radius:3px;
+    /* Calibrated color zones like a real level meter: green (safe) → amber (hot) → red (peak),
+       anchored to the meter's full height so the zones never stretch or shift. */
+    background:linear-gradient(0deg, #2f9e4f 0%, #2f9e4f 55%, #e0b34d 55%, #e0b34d 82%, #e0403f 82%, #e0403f 100%);
+    border:1px solid #262c38; position:relative; overflow:hidden; flex-shrink:0;
+    transition:height .12s ease;
+  }
+  /* Calibration ticks at fixed intervals up the scale, drawn over the color zones. */
+  .vu-meter::before{
+    content:''; position:absolute; inset:0; pointer-events:none; z-index:2;
+    background-image: repeating-linear-gradient(
+      0deg,
+      rgba(0,0,0,.55) 0, rgba(0,0,0,.55) 1px,
+      transparent 1px, transparent 20%
+    );
+  }
+  .vu-fill{
+    /* A dark mask covering the "unlit" portion from the top; shrinks as the level rises,
+       revealing the calibrated color zones underneath rather than a plain moving bar. */
+    position:absolute; top:0; left:0; right:0; height:95%;
+    background:#0f1217; transition:height .09s ease-out;
+  }
+  .staff-card.playing .vu-fill{ height:calc(100% - var(--vu-level, 80%)); }
+
+  .fader-wrap{
+    width:32px; height:var(--fader-h, 98px); display:flex; align-items:center; justify-content:center;
+    flex-shrink:0; touch-action:none; transition:height .12s ease;
+  }
+  .fader-wrap input[type=range]{
+    -webkit-appearance:none; appearance:none; background:transparent;
+    width:calc(var(--fader-h, 98px) - 6px); height:32px; margin:0; transform:rotate(-90deg); accent-color:var(--stc);
+    touch-action:none;
+  }
+  .fader-wrap input[type=range]::-webkit-slider-runnable-track{
+    height:4px; background:#0f1217; border-radius:2px; border:1px solid #262c38;
+  }
+  .fader-wrap input[type=range]::-webkit-slider-thumb{
+    -webkit-appearance:none; width:32px; height:18px; margin-top:-7px; border-radius:4px;
+    border:1px solid rgba(0,0,0,.5); box-shadow:0 2px 4px rgba(0,0,0,.6), inset 0 1px 0 rgba(255,255,255,.15);
+    background:linear-gradient(180deg, var(--stc) 0%, var(--stc) 44%, #ffffff 44%, #ffffff 56%, var(--stc) 56%, var(--stc) 100%);
+  }
+  .fader-wrap input[type=range]::-moz-range-track{
+    height:4px; background:#0f1217; border-radius:2px; border:1px solid #262c38;
+  }
+  .fader-wrap input[type=range]::-moz-range-thumb{
+    width:32px; height:18px; border-radius:4px; border:1px solid rgba(0,0,0,.5);
+    box-shadow:0 2px 4px rgba(0,0,0,.6), inset 0 1px 0 rgba(255,255,255,.15);
+    background:linear-gradient(180deg, var(--stc) 0%, var(--stc) 44%, #ffffff 44%, #ffffff 56%, var(--stc) 56%, var(--stc) 100%);
+  }
+
+  .sc-value{
+    font-family:var(--font-mono); font-size:14px; font-weight:700; color:#e9e6de;
+  }
+
+  .empty-note{color:#6b7280; font-size:12px; padding:8px 2px;}
+  #error-box{
+
+    display:none; background:#3a2323; border:1px solid #6b3232; color:#f3c6c6; padding:12px 14px;
+    border-radius:8px; font-size:13px; margin-bottom:18px;
+  }
+
+  /* ---- score library on the home screen ---- */
+  .lib-bar{
+    display:flex; gap:10px; align-items:center; justify-content:center;
+    margin:30px auto 0; max-width:720px; width:100%;
+  }
+  .lib-path{
+    flex:1; min-width:0; padding:9px 12px; border-radius:9px;
+    border:1px solid #454c5b; background:rgba(0,0,0,.25);
+    color:#e9e6de; font:inherit; font-size:13px; text-align:left;
+  }
+  .lib-path::placeholder{ color:#6b7280; }
+  /* The folder box is a picker: shared Google Drive folders from config.ark2,
+     plus a folder on this device. */
+  select.lib-source{
+    -webkit-appearance:none; appearance:none; cursor:pointer;
+    padding-right:30px; text-overflow:ellipsis; white-space:nowrap; overflow:hidden;
+    background:rgba(0,0,0,.25) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 10 6'%3E%3Cpath d='M1 1l4 4 4-4' fill='none' stroke='%23c9a15a' stroke-width='1.5'/%3E%3C/svg%3E") right 11px center / 10px no-repeat;
+  }
+  select.lib-source:focus-visible{ outline:2px solid var(--brass); outline-offset:2px; }
+  select.lib-source option, select.lib-source optgroup{ background:#1d222c; color:#e9e6de; }
+  .lib-btn{
+    font:inherit; font-size:13px; padding:9px 15px; border-radius:9px;
+    border:1px solid rgba(201,161,90,.45); background:rgba(201,161,90,.10);
+    color:var(--brass-soft); cursor:pointer; white-space:nowrap;
+  }
+  .lib-btn:hover{ border-color:var(--brass); background:rgba(201,161,90,.20); }
+  /* Audio Player's folder bar: 20% smaller and tucked up under the deck. */
+  #audio-player-panel .lib-bar{ margin-top:4px; gap:8px; }
+  #audio-player-panel .lib-path,
+  #audio-player-panel .lib-btn{ font-size:10.5px; padding:7px 12px; border-radius:7px; }
+  #audio-player-panel .lib-path{ padding:7px 10px; }
+  .lib-note{
+    font-family:var(--font-mono); font-size:12px; color:#6b7280;
+    margin:10px 0 0; min-height:15px;
+  }
+  .lib-toolbar{
+    display:flex; justify-content:flex-end; align-items:center; gap:8px;
+    width:100%; max-width:1040px; margin:8px auto 0;
+  }
+  /* Offline copies of shared scores */
+  .lib-dl-all{
+    margin-right:auto; display:inline-flex; align-items:center; gap:6px;
+    font-size:12px; padding:6px 12px;
+  }
+  .lib-dl-all[hidden]{ display:none; }
+  .lib-dl-all svg{ width:14px; height:14px; fill:none; stroke:currentColor; stroke-width:1.7; stroke-linecap:round; stroke-linejoin:round; }
+  .lib-dl-all:disabled{ opacity:.55; cursor:default; }
+  #lib-shelf .lib-card{ cursor:pointer; }
+  #lib-shelf .lib-card:focus-visible{ outline:2px solid var(--brass); outline-offset:2px; border-radius:8px; }
+  .pl-act.lib-saved{ color:#4ade80; border-color:rgba(74,222,128,.5); }
+  .pl-act.lib-update{ color:#f0c674; border-color:rgba(240,198,116,.6); }
+  .pl-act.lib-busy{ opacity:.6; cursor:progress; }
+  /* Render status beside a score: the "Rendered" microphone from the mixer,
+     gray when nothing is rendered, amber half-filled for some parts, green
+     and filled for all of them. */
+  .lib-rstat{
+    order:-1; flex:0 0 auto; width:32px; height:26px; display:inline-flex; align-items:center; justify-content:center;
+    border-radius:6px; cursor:help;
+  }
+  .lib-rstat[hidden]{ display:none; }
+  .lib-rstat svg{ width:30px; height:23px; overflow:visible; }
+  .lib-rstat .mic rect, .lib-rstat .mic path{ fill:none; stroke-width:1.5; stroke-linecap:round; stroke-linejoin:round; }
+  .lib-rstat .mic-halo rect, .lib-rstat .mic-halo path{ fill:#14181f; stroke:#14181f; stroke-width:3.6; stroke-linecap:round; stroke-linejoin:round; }
+  .lib-rstat .mic-halo path{ fill:none; }
+  .lib-rstat[data-state="none"] .mic rect, .lib-rstat[data-state="none"] .mic path{ stroke:#5b6270; }
+  .lib-rstat[data-state="partial"] .mic rect, .lib-rstat[data-state="partial"] .mic path{ stroke:#f0c674; }
+  .lib-rstat[data-state="full"] .mic rect, .lib-rstat[data-state="full"] .mic path{ stroke:#4ade80; }
+  /* what's behind the mic: blue cloud = Google Drive, green drive = this device */
+  .lib-rstat .bg-cloud{ fill:#60a5fa; opacity:.85; }
+  .lib-rstat .bg-disk{ fill:#4ade80; opacity:.85; }
+  .lib-rstat .bg-disk-line{ stroke:#0f2a18; stroke-width:1.2; stroke-linecap:round; opacity:.7; }
+  .lib-rstat .bg-disk-led{ fill:#0f2a18; opacity:.7; }
+  .lib-rstat .mic{ fill:none; stroke-width:1.4; stroke-linecap:round; stroke-linejoin:round; }
+  .lib-rstat[data-state="none"] .mic{ stroke:#5b6270; }
+  .lib-rstat[data-state="partial"] .mic{ stroke:#f0c674; }
+  .lib-rstat[data-state="partial"] .fill{ fill:#f0c674; }
+  .lib-rstat[data-state="full"] .mic{ stroke:#4ade80; }
+  .lib-rstat[data-state="full"] .fill{ fill:#4ade80; }
+
+  /* ---- Music Sheet ---- */
+  .sheet-hero{ display:flex; align-items:center; justify-content:center; gap:10px; margin:6px 0 2px; }
+  .sheet-hero svg{ width:28px; height:28px; fill:none; stroke:var(--brass); stroke-width:1.6; stroke-linecap:round; stroke-linejoin:round; }
+  .sheet-hero h2{ margin:0; font-family:var(--font-display); font-size:22px; color:#f0ede4; font-weight:700; }
+  #sheet-player-panel .lib-bar{ margin-top:12px; }
+  #sheet-player-panel .lib-toolbar, #sheet-player-panel .lib-note, #sheet-shelf{ max-width:720px; margin-left:auto; margin-right:auto; }
+  #sheet-note:empty{ display:none; }
+  #sheet-shelf{ margin-top:8px; }
+  #sheet-shelf .lib-card{ cursor:pointer; }
+  #sheet-shelf .lib-card:focus-visible{ outline:2px solid var(--brass); outline-offset:2px; border-radius:8px; }
+
+  /* The viewer: full screen, one page centred, turned like a book page --
+     the leaf swings over its left edge (3D, perspective on the stage). */
+  /* ---- Access PIN (asked once per device) ---- */
+  html.pin-pending body > *:not(.pin-gate){ visibility:hidden; }
+  .pin-gate{
+    position:fixed; inset:0; z-index:5000; display:flex; align-items:center; justify-content:center;
+    padding:20px; background:radial-gradient(ellipse at 50% 0%, #232a36 0%, #0b0d11 75%);
+  }
+  .pin-gate[hidden]{ display:none; }
+  .pin-card{
+    width:100%; max-width:320px; text-align:center; padding:28px 24px 22px;
+    background:rgba(20,24,31,.9); border:1px solid #2b3140; border-radius:16px;
+    box-shadow:0 20px 50px rgba(0,0,0,.6);
+  }
+  .pin-card.shake{ animation:pin-shake .35s ease; }
+  @keyframes pin-shake{ 20%,60%{ transform:translateX(-8px); } 40%,80%{ transform:translateX(8px); } }
+  .pin-logo{ width:72px; height:72px; border-radius:50%; object-fit:cover; border:2px solid var(--brass); background:#fff; }
+  .pin-card h1{ margin:12px 0 4px; font-family:var(--font-display); font-size:22px; color:#f0ede4; }
+  .pin-sub{ margin:0 0 16px; font-size:13.5px; color:#9aa0aa; }
+  .pin-input{
+    width:100%; box-sizing:border-box; padding:12px 14px; border-radius:10px;
+    border:1px solid #3a4150; background:#0d1014; color:#f0ede4;
+    font-family:var(--font-mono); font-size:22px; letter-spacing:.35em; text-align:center;
+  }
+  .pin-input:focus{ outline:none; border-color:var(--brass); box-shadow:0 0 0 3px rgba(201,161,90,.25); }
+  .pin-btn{
+    width:100%; margin-top:12px; padding:11px; border-radius:10px; cursor:pointer;
+    border:1px solid var(--brass); background:var(--brass); color:#1a1406;
+    font-family:var(--font-mono); font-size:13px; font-weight:700; letter-spacing:.08em; text-transform:uppercase;
+  }
+  .pin-btn:disabled{ opacity:.5; cursor:default; }
+  .pin-msg{ min-height:18px; margin:10px 0 0; font-size:12.5px; color:#f87171; }
+
+  /* ---- Data-usage warning before "Download all" ---- */
+  .dl-warn{
+    position:fixed; inset:0; z-index:4500; display:flex; align-items:center; justify-content:center;
+    padding:20px; background:rgba(5,7,10,.62); backdrop-filter:blur(3px); -webkit-backdrop-filter:blur(3px);
+  }
+  .dl-warn[hidden]{ display:none; }
+  .dl-warn-card{
+    width:100%; max-width:320px; text-align:center; padding:22px 20px 18px;
+    background:#171b22; border:1px solid #2b3140; border-radius:16px;
+    box-shadow:0 20px 50px rgba(0,0,0,.6); animation:dl-warn-in .18s ease-out;
+  }
+  @keyframes dl-warn-in{ from{ opacity:0; transform:scale(.94); } to{ opacity:1; transform:none; } }
+  .dl-warn-ico{
+    width:46px; height:46px; margin:0 auto 10px; border-radius:50%; display:flex; align-items:center; justify-content:center;
+    background:rgba(251,191,36,.14); border:1px solid rgba(251,191,36,.45);
+  }
+  .dl-warn-ico svg{ width:22px; height:22px; fill:none; stroke:#fbbf24; stroke-width:2; stroke-linecap:round; stroke-linejoin:round; }
+  .dl-warn-card h2{ margin:0 0 8px; font-family:var(--font-display); font-size:19px; color:#f0ede4; }
+  .dl-warn-text{ margin:0 0 6px; font-size:13.5px; line-height:1.45; color:#c9cdd4; }
+  .dl-warn-text b{ color:#f0ede4; }
+  .upd-pop .dl-warn-ico{ background:rgba(74,222,128,.14); border-color:rgba(74,222,128,.45); }
+  .upd-pop .dl-warn-ico svg{ stroke:#4ade80; }
+  .dl-warn-tip{ margin:0 0 16px; font-size:12px; color:#8a909a; }
+  .dl-warn-btns{ display:flex; gap:10px; }
+  .dl-warn-btns button{
+    flex:1; padding:10px; border-radius:10px; cursor:pointer;
+    font-family:var(--font-mono); font-size:12.5px; font-weight:700; letter-spacing:.06em; text-transform:uppercase;
+  }
+  .dl-warn-cancel{ background:transparent; border:1px solid #3a4150; color:#c9cdd4; }
+  .render-fail-ico{ background:rgba(248,113,113,.14); border-color:rgba(248,113,113,.45); }
+  .render-fail-ico svg{ stroke:#f87171; }
+  /* Which parts of a score are rendered (tapping its status circle). */
+  .render-parts-list{ list-style:none; margin:4px 0 16px; padding:0; text-align:left; }
+  .render-parts-list li{
+    display:flex; align-items:center; gap:10px; padding:8px 10px; margin-top:6px;
+    border:1px solid #2b3140; border-radius:10px; font-size:14px; color:#c9cdd4;
+  }
+  .render-parts-list li .mark{ width:18px; text-align:center; font-weight:700; }
+  .render-parts-list li.yes .mark{ color:#4ade80; }
+  .render-parts-list li.no .mark{ color:#5b6270; }
+  .render-parts-list li.yes{ color:#f0ede4; }
+  .render-parts-list li .state{ margin-left:auto; font-size:12px; color:#8a909a; }
+  .render-parts-del{
+    display:flex; align-items:center; gap:10px; margin:-4px 0 14px; padding:8px 10px; text-align:left;
+    border:1px dashed #4a3438; border-radius:10px; font-size:13px; color:#f3b4b4; cursor:pointer;
+  }
+  .render-parts-del[hidden]{ display:none; }
+  .render-parts-del input{ width:16px; height:16px; accent-color:#f87171; cursor:pointer; }
+  .dl-warn-ok{ background:var(--brass); border:1px solid var(--brass); color:#1a1406; }
+
+  .sheet-viewer{
+    position:fixed; inset:0; z-index:2500; display:flex; flex-direction:column;
+    background:radial-gradient(ellipse at 50% 0%, #1d222c 0%, #0b0d11 75%);
+  }
+  .sheet-viewer[hidden]{ display:none; }
+  .sv-head{
+    display:flex; align-items:center; gap:12px; flex:0 0 auto;
+    padding:10px 14px; padding-top:max(10px, env(safe-area-inset-top));
+    border-bottom:1px solid #232a36; background:rgba(13,16,20,.85);
+  }
+  .sv-title{
+    flex:1 1 auto; min-width:0; font-family:var(--font-display); font-size:16px; font-weight:700;
+    color:#f0ede4; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+  }
+  .sv-count{ flex:0 0 auto; font-family:var(--font-mono); font-size:12px; color:#9aa0aa; }
+  /* Play along: a recording and/or the score's notes, picked in the header. */
+  .sheet-viewer .sv-title{ flex:0 1 auto; }
+  .sv-play{ flex:1 1 auto; min-width:0; display:flex; align-items:center; justify-content:center; gap:10px; }
+  .sv-pick{ display:flex; align-items:center; gap:5px; min-width:0; flex:0 1 260px; }
+  .sv-pico{ flex:0 0 auto; font-size:14px; }
+  .sv-pick select{
+    flex:1 1 auto; min-width:0; font-family:var(--font-mono); font-size:11px; color:#e9e6de;
+    padding:6px 24px 6px 9px; border-radius:7px; border:1px solid #3a4150;
+    background:#161a21 url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 10 6'%3E%3Cpath d='M1 1l4 4 4-4' fill='none' stroke='%23c9a15a' stroke-width='1.5'/%3E%3C/svg%3E") right 8px center / 9px no-repeat;
+    -webkit-appearance:none; appearance:none; text-overflow:ellipsis; cursor:pointer;
+  }
+  .sv-pbtn{
+    flex:0 0 auto; width:30px; height:30px; border-radius:50%; cursor:pointer;
+    border:1px solid #aaadb2; background:#aaadb2; color:#181c22;
+    display:flex; align-items:center; justify-content:center; transition:background .2s ease, border-color .2s ease;
+  }
+  .sv-pbtn svg{ width:15px; height:15px; fill:currentColor; }
+  .sv-pbtn .i-pause{ display:none; }
+  .sv-pbtn.playing{ background:#86efac; border-color:#86efac; color:#0f2a18; }
+  .sv-pbtn.playing .i-play{ display:none; }
+  .sv-pbtn.playing .i-pause{ display:block; }
+  .sv-pbtn:disabled{ opacity:.45; cursor:default; }
+  .sv-pstat{ flex:0 0 auto; font-family:var(--font-mono); font-size:11px; color:#9aa0aa; white-space:nowrap; }
+  .sv-pstat:empty{ display:none; }
+  @media (max-width:760px){
+    .sv-head{ flex-wrap:wrap; row-gap:8px; }
+    .sheet-viewer .sv-title{ flex:1 1 auto; }
+    .sv-play{ order:5; flex:1 1 100%; justify-content:flex-start; gap:8px; }
+    .sv-pick{ flex:1 1 0; }
+  }
+  .sv-close{
+    width:34px; height:34px; border-radius:50%; flex:0 0 auto; cursor:pointer;
+    border:1px solid #3a4150; background:rgba(35,42,54,.7); color:#e9e6de;
+    font-size:22px; line-height:1; display:flex; align-items:center; justify-content:center;
+  }
+  .sv-stage{
+    position:relative; flex:1 1 auto; min-height:0; overflow:hidden;
+    display:flex; align-items:center; justify-content:center;
+    perspective:2400px; touch-action:none; -webkit-user-select:none; user-select:none;
+    padding-bottom:env(safe-area-inset-bottom);
+  }
+  .sv-book{ position:relative; margin:0 auto; filter:drop-shadow(0 14px 30px rgba(0,0,0,.55)); }
+  /* Zoom layer: pinch / double-tap scale it (JS sets the transform). */
+  .sv-zoom{ position:relative; transform-origin:0 0; will-change:transform; }
+  .sheet-viewer.zoomed .sv-zoom{ cursor:grab; }
+  .sheet-viewer.zoomed .sv-nav{ opacity:.35; }
+  .sv-zoomreset{
+    flex:0 0 auto; font-family:var(--font-mono); font-size:11.5px; font-weight:700;
+    padding:5px 10px; border-radius:999px; cursor:pointer;
+    border:1px solid var(--brass); background:rgba(201,161,90,.16); color:var(--brass-soft);
+  }
+  .sv-zoomreset[hidden]{ display:none; }
+  .sv-leaf{ background:#fff; overflow:hidden; }
+  .sv-leaf canvas{ display:block; width:100%; height:100%; }
+  .sv-nav{
+    position:absolute; top:50%; transform:translateY(-50%); z-index:3;
+    width:40px; height:64px; border-radius:10px; cursor:pointer;
+    border:1px solid #3a4150; background:rgba(20,24,31,.6); color:#e9e6de;
+    font-size:30px; line-height:1; display:flex; align-items:center; justify-content:center;
+  }
+  .sv-nav:disabled{ opacity:.2; cursor:default; }
+  .sv-prev{ left:8px; } .sv-next{ right:8px; }
+  .sv-loading{
+    position:absolute; inset:0; display:flex; align-items:center; justify-content:center;
+    font-family:var(--font-mono); font-size:13px; color:#9aa0aa; z-index:4; pointer-events:none;
+  }
+  .sv-loading[hidden]{ display:none; }
+  #audio-dl-all.done{ color:#4ade80; border-color:rgba(74,222,128,.5); }
+  #audio-dl-all.busy{ opacity:.6; cursor:progress; }
+  .lib-view-toggle{
+    display:flex; gap:2px; background:#151920; border:1px solid #2b3140;
+    border-radius:8px; padding:2px;
+  }
+  .lib-view-btn{
+    display:flex; align-items:center; gap:6px; padding:6px 11px;
+    background:none; border:0; border-radius:6px; cursor:pointer;
+    font-family:var(--font-mono); font-size:11px; color:#7b8290;
+    transition:background .12s ease, color .12s ease;
+  }
+  .lib-view-btn svg{ fill:currentColor; }
+  .lib-view-btn:hover{ color:#cfd3da; }
+  .lib-view-btn.active{ background:#2b3140; color:var(--brass-soft); }
+  @media (max-width:520px){ .lib-view-btn span, .lib-view-btn{ font-size:10px; } }
+
+  /* Thumbnails: minmax's lower bound scales with viewport width (via clamp)
+     so phones get a couple of comfortably large covers per row instead of
+     either one huge card or a wall of tiny illegible ones -- the same grid
+     rule just adapts its own floor instead of needing separate breakpoints. */
+  .lib-shelf{
+    display:grid; gap:18px 14px; margin:18px auto 0; width:100%; max-width:1040px;
+    grid-template-columns:repeat(auto-fill, minmax(clamp(92px, 26vw, 126px), 1fr));
+    max-height:44vh; overflow-y:auto; padding:2px;
+  }
+  .lib-shelf.list-view{
+    display:flex; flex-direction:column; gap:2px;
+    max-height:50vh;
+  }
+  .lib-shelf.list-view .lib-card{
+    flex-direction:row; align-items:center; gap:12px; width:100%;
+    padding:9px 12px; border-radius:8px; text-align:left;
+    border:1px solid transparent;
+  }
+  .lib-shelf.list-view .lib-card:hover{
+    background:#1c212a; border-color:rgba(201,161,90,.28);
+  }
+  .lib-shelf.list-view .lib-cover{
+    width:34px; height:34px; aspect-ratio:auto; flex:0 0 auto; border-radius:5px;
+  }
+  /* File icons: the page itself is the icon in list rows, so the tile
+     behind it (and its staff-line decoration) goes away. Thumbnails show
+     the same icon, large, on the dark tile (the name sits underneath). */
+  .file-ico{ display:none; }
+  .lib-shelf:not(.list-view) .lib-cover.has-ico::before,
+  .lib-shelf:not(.list-view) .lib-cover.has-ico > span{ display:none; }
+  .lib-shelf:not(.list-view) .lib-cover.has-ico .file-ico{
+    display:block; width:50%; height:auto; filter:drop-shadow(0 6px 10px rgba(0,0,0,.5));
+    transition:transform .15s ease;
+  }
+  .lib-shelf:not(.list-view) .lib-card:hover .lib-cover.has-ico .file-ico{ transform:scale(1.05); }
+  .lib-shelf.list-view .lib-cover.has-ico{
+    width:28px; height:35px; background:none; border:0; box-shadow:none; overflow:visible;
+  }
+  .lib-shelf.list-view .lib-cover.has-ico::before{ display:none; }
+  .lib-shelf.list-view .lib-cover.has-ico .file-ico{
+    display:block; width:100%; height:100%; filter:drop-shadow(0 2px 3px rgba(0,0,0,.45));
+  }
+  .lib-shelf.list-view .lib-card:hover .lib-cover.has-ico .file-ico{ transform:translateY(-1px); }
+  .lib-shelf.list-view .lib-cover::before{ top:38%; height:11px; }
+  .lib-shelf.list-view .lib-cover span{ display:none; } /* title lives in .lib-name in list rows */
+  .lib-shelf.list-view .lib-card:hover .lib-cover{ transform:none; }
+  .lib-shelf.list-view .lib-name,
+  .lib-shelf.list-view .lib-sub{
+    text-align:left; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+    display:block; -webkit-line-clamp:unset;
+  }
+  .lib-shelf.list-view .lib-name{ flex:1 1 auto; min-width:0; }
+
+  /* Audio playlist rows are tighter than score rows -- a playlist is read
+     top to bottom, so more songs on screen beats a big icon. */
+  #audio-shelf.list-view{ gap:1px; }
+  #audio-note:empty{ display:none; } /* no message, no gap -- the list moves up */
+  #audio-shelf{ margin-top:8px; }
+  #audio-shelf.list-view .lib-card{ padding:5px 10px; gap:10px; }
+  #audio-shelf.list-view .lib-cover{ width:26px; height:26px; border-radius:4px; }
+  #audio-shelf.list-view .lib-cover.has-ico{ width:24px; height:30px; }
+  #audio-shelf.list-view .lib-cover::before{ height:8px; }
+  #audio-shelf.list-view .lib-name{ font-size:12.5px; }
+  #audio-shelf.list-view .lib-card.now-playing .lib-cover::after{ width:12px; height:12px; margin:-6px 0 0 -6px; }
+  /* On phones the player stays put and only the song list scrolls: JS
+     (fitAudioShelf) sizes the list to exactly the screen height left under
+     the player, and trims the page's bottom padding so the page itself has
+     nothing left to scroll. */
+  body.audio-fit:not(.workspace-active){ padding-bottom:6px; }
+  body.audio-fit:not(.workspace-active) #dropzone{ padding-bottom:7px; margin-bottom:0; }
+  body.audio-fit #audio-shelf,
+  body.audio-fit #audio-shelf.list-view{
+    overflow-y:auto; overscroll-behavior:contain; -webkit-overflow-scrolling:touch;
+  }
+
+  /* ---- Custom playlists ---- */
+  /* One row always: the playlist picker takes whatever width is left and a
+     long playlist name is cut off with an ellipsis, rather than pushing the
+     view toggle onto a second line. */
+  #audio-player-panel .lib-toolbar{ flex-wrap:nowrap; gap:8px; }
+  #audio-view-toggle{ margin-left:auto; flex:0 0 auto; }
+  /* Same 720px column as the player and folder bar, so every row in the
+     Audio Player lines up edge to edge on wide screens. */
+  #audio-player-panel .lib-toolbar,
+  #audio-player-panel .lib-note,
+  #audio-shelf{ max-width:720px; margin-left:auto; margin-right:auto; }
+  #audio-view-toggle .lib-view-btn{ padding:7px 9px; } /* icon-only, so square it up */
+  .pl-bar{ display:flex; align-items:center; gap:6px; min-width:0; flex:1 1 auto; }
+  .pl-select{
+    font-family:var(--font-mono); font-size:11px; color:#e9e6de;
+    flex:0 1 auto; min-width:0; max-width:240px; /* shrinks to fit; long names get "…" */
+    padding:6px 26px 6px 10px; border-radius:7px; border:1px solid #3a4150;
+    background:#161a21 url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 10 6'%3E%3Cpath d='M1 1l4 4 4-4' fill='none' stroke='%23c9a15a' stroke-width='1.5'/%3E%3C/svg%3E") right 9px center / 9px no-repeat;
+    -webkit-appearance:none; appearance:none; cursor:pointer;
+    text-overflow:ellipsis; overflow:hidden; white-space:nowrap;
+  }
+  .pl-select:focus-visible{ outline:2px solid var(--brass); outline-offset:2px; }
+  .pl-icon, .pl-act{
+    flex:0 0 auto; width:28px; height:28px; padding:0; border-radius:7px;
+    display:inline-flex; align-items:center; justify-content:center;
+    border:1px solid #3a4150; background:rgba(35,42,54,.6); color:#9aa0aa; cursor:pointer;
+  }
+  .pl-icon svg, .pl-act svg{ width:14px; height:14px; fill:none; stroke:currentColor; stroke-width:1.6; stroke-linecap:round; stroke-linejoin:round; }
+  .pl-icon:hover, .pl-act:hover{ color:var(--brass-soft); border-color:var(--brass); }
+  .pl-icon[hidden]{ display:none; }
+  /* How long the pause between songs lasts; shown while that toggle is on. */
+  .pl-gap-select{ flex:0 0 auto; max-width:none; }
+  .pl-gap-select[hidden]{ display:none; }
+  @media (max-width:560px){
+    /* Room for the playlist's name: a snug pause picker, closer spacing. */
+    .pl-bar:has(.pl-gap-select:not([hidden])){ gap:4px; }
+    .pl-gap-select{ padding:6px 18px 6px 8px; background-position:right 6px center; }
+  }
+  .pl-act{ width:24px; height:24px; border-radius:50%; }
+  .pl-act svg{ width:12px; height:12px; }
+  .pl-act.pl-remove:hover{ color:#f87171; border-color:#f87171; }
+  .pl-act.pl-add.added{ color:#4ade80; border-color:rgba(74,222,128,.5); }
+  .pl-act:disabled{ opacity:.3; cursor:default; }
+  .pl-act:disabled:hover{ color:#9aa0aa; border-color:#3a4150; }
+  .pl-actions{ display:flex; gap:4px; flex:0 0 auto; }
+  .lib-shelf.list-view .pl-actions{ margin-left:8px; }
+  .lib-shelf:not(.list-view) .pl-actions{ justify-content:center; }
+  .pl-edit{ display:flex; gap:8px; max-width:720px; margin:10px auto 0; }
+  .pl-edit[hidden]{ display:none; }
+  .pl-edit-input{
+    flex:1; min-width:0; padding:7px 10px; border-radius:7px; font:inherit; font-size:12px;
+    border:1px solid var(--brass); background:rgba(0,0,0,.3); color:#e9e6de;
+  }
+  #audio-player-panel .pl-edit .lib-btn{ font-size:11px; padding:7px 12px; }
+  .pl-menu{
+    position:absolute; z-index:1000; min-width:200px; max-width:260px; padding:6px;
+    background:#1d222c; border:1px solid #3a4150; border-radius:10px;
+    box-shadow:0 12px 30px rgba(0,0,0,.6);
+  }
+  .pl-menu[hidden]{ display:none; }
+  .pl-menu-title{
+    font-family:var(--font-mono); font-size:10px; letter-spacing:.08em; text-transform:uppercase;
+    color:#6b7280; padding:4px 8px 6px;
+  }
+  .pl-menu button{
+    display:flex; width:100%; align-items:center; gap:8px; padding:8px; border:0; border-radius:6px;
+    background:none; color:#e9e6de; font:inherit; font-size:13px; text-align:left; cursor:pointer;
+  }
+  .pl-menu button:hover{ background:#2b3140; }
+  .pl-menu button .tick{ width:14px; color:#4ade80; flex:0 0 auto; }
+  .pl-menu button .cnt{ margin-left:auto; font-family:var(--font-mono); font-size:10.5px; color:#6b7280; }
+  .pl-menu .pl-menu-new{ color:var(--brass-soft); border-top:1px solid #2b3140; border-radius:0 0 6px 6px; margin-top:4px; }
+  #audio-shelf .lib-card{ cursor:pointer; }
+  #audio-shelf .lib-card:focus-visible{ outline:2px solid var(--brass); outline-offset:2px; border-radius:8px; }
+
+  /* Playlist: green check on the cover of the track that's playing now. */
+  .lib-card.now-playing .lib-cover{ border-color:#22c55e; box-shadow:0 0 0 1px #22c55e, 0 0 12px rgba(34,197,94,.35); }
+  .lib-card.now-playing .lib-cover::before{ opacity:.25; }
+  .lib-card.now-playing .lib-cover::after{
+    content:''; position:absolute; z-index:2; left:50%; top:50%;
+    width:18px; height:18px; margin:-9px 0 0 -9px; border-radius:50%;
+    background:#22c55e url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23ffffff' stroke-width='3.8' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M5 12.5l4.5 4.5L19 7.5'/%3E%3C/svg%3E") center / 62% no-repeat;
+    box-shadow:0 1px 4px rgba(0,0,0,.5);
+  }
+  .lib-shelf.list-view .lib-card.now-playing .lib-cover::after{ width:13px; height:13px; margin:-6.5px 0 0 -6.5px; }
+  .lib-card.now-playing .lib-name{ color:#4ade80; }
+  .lib-shelf.list-view .lib-sub{ margin-left:auto; flex:0 0 auto; padding-left:10px; }
+
+  .app-version{
+    font-family:var(--font-mono); font-size:10.5px; color:#4b515e;
+    text-align:center; margin:22px 0 4px; letter-spacing:.03em;
+  }
+  /* Whether this page is the latest build or an older saved (cached) copy. */
+  #dropzone .app-update{ /* #dropzone p would otherwise make it 14px */
+    font-family:var(--font-mono); font-size:10.5px; text-align:center;
+    margin:0 0 4px; min-height:14px; color:#4b515e;
+  }
+  #dropzone .app-update:empty{ display:none; }
+  /* Up to date: just a green tick after the build number. */
+  .ver-ok{ color:#3f8f5a; margin-left:6px; font-weight:700; }
+  .ver-ok[hidden]{ display:none; }
+  #dropzone .app-update.offline{ color:#8b93a7; }
+  .app-update button{
+    font:inherit; color:#f0c674; background:rgba(201,161,90,.12);
+    border:1px solid rgba(201,161,90,.5); border-radius:6px; padding:4px 10px; cursor:pointer;
+  }
+  .app-update button:hover{ border-color:var(--brass); background:rgba(201,161,90,.22); }
+
+  /* ---- Note Player / Audio Player tabs ---- */
+  .player-tabs{
+    display:flex; justify-content:center; gap:8px; margin:0 0 18px;
+  }
+  .player-tab{
+    font-family:var(--font-mono); font-size:12px; letter-spacing:.04em;
+    padding:7px 18px; border-radius:8px; border:1px solid #2b3140;
+    background:rgba(35,42,54,.5); color:#8b93a7; cursor:pointer;
+    transition:color .15s ease, border-color .15s ease, background .15s ease;
+  }
+  .player-tab:hover{ color:#cfd3da; border-color:#4a5364; }
+  .player-tab.active{
+    color:var(--room); background:var(--brass); border-color:var(--brass);
+    font-weight:700;
+  }
+  .player-panel{ display:none; }
+  .player-panel.active{ display:block; }
+
+  /* ---- Audio Player ---- */
+  /* ---- Turntable deck ---- */
+  /* Laid out like a real deck seen from above: the tonearm in its own box
+     just left of the record, the volume box just right of it, and the
+     playback controls across the full width underneath. The two outer
+     1fr tracks are empty spacers that keep the top row centred. */
+  .turntable{
+    --disc-size:210px;
+    --arm-col:76px;
+    --vol-col:116px;
+    display:grid;
+    grid-template-columns:minmax(0, 1fr) var(--arm-col) var(--disc-size) var(--vol-col) minmax(0, 1fr);
+    grid-template-areas:
+      ". arm disc vol ."
+      "deck deck deck deck deck";
+    column-gap:18px; row-gap:16px;
+    max-width:720px; margin:0 auto; padding:16px;
+    position:relative;
+    background:
+      radial-gradient(ellipse 70% 45% at 50% 0%, rgba(201,161,90,.10), rgba(201,161,90,0) 70%),
+      linear-gradient(180deg, #1d222c 0%, #14181f 100%);
+    border:1px solid #2b3140; border-radius:18px;
+    box-shadow:0 18px 40px rgba(0,0,0,.45), inset 0 1px 0 rgba(255,255,255,.04);
+  }
+  .tt-col{
+    background:rgba(10,12,16,.55); border:1px solid #2b3140; border-radius:12px;
+  }
+  /* Both boxes are exactly as tall as the record. */
+  .tt-arm-col{ grid-area:arm; position:relative; height:var(--disc-size); }
+  .tt-vol-col{ grid-area:vol; height:var(--disc-size); box-sizing:border-box; }
+  .tt-disc-area{
+    grid-area:disc; display:flex; justify-content:center; align-items:center;
+  }
+  /* Controls panel: full width, kept short so the playlist gets the room. */
+  .tt-deck{ grid-area:deck; padding:8px 12px; min-width:0; }
+
+  .vinyl-wrap{ position:relative; width:var(--disc-size); aspect-ratio:1; }
+  /* Finer, denser grooves and a bright metallic rim ring -- closer to how
+     a real pressed record actually catches light at the edge, rather than
+     a flat painted circle. */
+  .vinyl-disc{
+    width:100%; height:100%; border-radius:50%; position:relative;
+    background:
+      repeating-radial-gradient(circle at center,
+        #101317 0px, #101317 1.4px, #1b1f26 2px, #1b1f26 2.4px);
+    box-shadow:
+      0 10px 26px rgba(0,0,0,.6),
+      inset 0 0 0 1px rgba(255,255,255,.05),
+      inset 0 0 0 3px rgba(200,205,215,.35);
+    display:flex; align-items:center; justify-content:center;
+    cursor:pointer; touch-action:none;
+  }
+  .vinyl-label{
+    width:40%; height:40%; border-radius:50%; object-fit:cover;
+    box-shadow:0 0 0 2px #0b0d12, 0 0 0 3px rgba(201,161,90,.5), 0 2px 8px rgba(0,0,0,.5);
+    position:relative; z-index:1; pointer-events:none;
+  }
+  /* A soft rotating highlight arc -- light catching the vinyl as it turns. */
+  .vinyl-shine{
+    position:absolute; inset:0; border-radius:50%; pointer-events:none;
+    background:conic-gradient(from 0deg,
+      rgba(255,255,255,0) 0deg, rgba(255,255,255,.12) 16deg,
+      rgba(255,255,255,0) 38deg, rgba(255,255,255,0) 360deg);
+  }
+  .vinyl-spindle{
+    position:absolute; left:50%; top:50%; width:8px; height:8px; margin:-4px 0 0 -4px;
+    border-radius:50%; background:radial-gradient(circle at 35% 30%, #f2efe8, #8b93a7);
+    z-index:2; pointer-events:none;
+  }
+
+
+  /* Tonearm -- a chrome tube arm on a black bearing plinth, with a
+     counterweight behind the pivot and a silver headshell with finger
+     lift at the tip. It pivots from the foot of its box and swings out
+     over the record. JS sets its length and angle from the real positions
+     of the pivot and the disc, so the stylus lands in the grooves at any
+     screen size and walks inward as the track plays. */
+  .tt-arm-col{ --plinth:52px; --bearing:22px; }
+  .tt-pivot{ /* black plinth the bearing sits in -- doesn't rotate */
+    position:absolute; left:50%; top:0; /* top placed by JS */
+    width:var(--plinth); height:var(--plinth);
+    margin:calc(var(--plinth) / -2) 0 0 calc(var(--plinth) / -2);
+    border-radius:50%; z-index:4;
+    background:
+      radial-gradient(circle at 50% 50%, #2a2e35 0 38%, transparent 39%),
+      radial-gradient(circle at 40% 32%, #2b3038, #0c0e11 72%);
+    box-shadow:0 0 0 1px #3b414c, 0 6px 14px rgba(0,0,0,.7), inset 0 1px 0 rgba(255,255,255,.08);
+  }
+  .tt-pivot-cap{ /* chrome bearing housing, drawn over the arm */
+    position:absolute; left:50%; top:0;
+    width:var(--bearing); height:var(--bearing);
+    margin:calc(var(--bearing) / -2) 0 0 calc(var(--bearing) / -2);
+    border-radius:50%; z-index:6; pointer-events:none;
+    background:radial-gradient(circle at 36% 30%, #ffffff 0%, #d4d8df 22%, #8a909b 58%, #3f444d 100%);
+    box-shadow:0 0 0 2px #15181d, 0 3px 6px rgba(0,0,0,.6);
+  }
+  .tt-lever{ /* cue lift lever beside the plinth -- decorative */
+    position:absolute; z-index:4; width:5px; height:26px; border-radius:3px;
+    background:linear-gradient(90deg, #6b7280, #eef0f3 45%, #8a909b);
+    transform:rotate(18deg); transform-origin:50% 100%;
+    box-shadow:0 2px 3px rgba(0,0,0,.5);
+  }
+  .tt-lever::before{
+    content:''; position:absolute; left:50%; top:-5px; width:9px; height:9px; margin-left:-4.5px;
+    border-radius:50%; background:radial-gradient(circle at 35% 30%, #fff, #9aa0aa 70%);
+  }
+  .tt-arm{
+    position:absolute; left:50%; top:0; width:30px; margin-left:-15px;
+    height:200px; /* replaced by JS */
+    transform-origin:50% 0; transform:rotate(-180deg); /* parked upright */
+    z-index:5; cursor:grab; touch-action:none;
+    filter:drop-shadow(0 6px 5px rgba(0,0,0,.55));
+    transition:filter .3s ease;
+  }
+  .tt-arm.lifted{ filter:drop-shadow(0 14px 10px rgba(0,0,0,.45)); }
+  .tt-arm.dragging{ cursor:grabbing; }
+  /* Chrome tube: a bright specular streak down one side reads as round. */
+  .tt-arm-rod{
+    position:absolute; left:50%; top:0; bottom:34px; width:6px; margin-left:-3px;
+    border-radius:3px;
+    background:linear-gradient(90deg, #4b515c 0%, #c9ced6 22%, #ffffff 38%, #b3b9c3 60%, #5d636e 100%);
+  }
+  .tt-arm-collar{
+    position:absolute; left:50%; bottom:30px; width:10px; height:8px; margin-left:-5px;
+    border-radius:2px;
+    background:linear-gradient(90deg, #3f444d, #d9dde3 40%, #7d838e 75%, #3f444d);
+  }
+  .tt-arm-weight{ /* counterweight, on the far side of the pivot */
+    position:absolute; left:50%; top:-40px; width:24px; height:24px; margin-left:-12px;
+    border-radius:4px;
+    background:
+      repeating-linear-gradient(180deg, rgba(0,0,0,.18) 0 1px, transparent 1px 4px),
+      linear-gradient(90deg, #3b4049 0%, #bfc4cc 30%, #f4f5f7 45%, #9ba1ab 70%, #3b4049 100%);
+    box-shadow:0 2px 4px rgba(0,0,0,.5);
+  }
+  .tt-arm-stub{ /* short shaft between counterweight and bearing */
+    position:absolute; left:50%; top:-18px; width:5px; height:18px; margin-left:-2.5px;
+    background:linear-gradient(90deg, #4b515c, #e6e9ed 40%, #6b717c);
+  }
+  .tt-arm-head{ /* headshell */
+    position:absolute; left:50%; bottom:0; width:18px; height:32px; margin-left:-9px;
+    border-radius:3px 3px 2px 2px;
+    clip-path:polygon(18% 0, 82% 0, 100% 100%, 0 100%);
+    background:linear-gradient(90deg, #6b717c 0%, #e9ecf0 35%, #ffffff 48%, #b5bbc4 70%, #555b66 100%);
+  }
+  .tt-arm-head::before{ /* cartridge body */
+    content:''; position:absolute; left:3px; right:3px; bottom:2px; height:14px;
+    border-radius:2px; background:linear-gradient(180deg, #2a2e35, #0f1114);
+    box-shadow:inset 0 1px 0 rgba(255,255,255,.15);
+  }
+  .tt-arm-head::after{ /* the stylus */
+    content:''; position:absolute; left:50%; bottom:0; width:2px; height:4px; margin-left:-1px;
+    background:var(--brass); border-radius:1px;
+  }
+  .tt-arm-lift{ /* finger lift sticking out from the headshell */
+    position:absolute; left:calc(50% + 7px); bottom:16px; width:13px; height:3px;
+    border-radius:2px; transform:rotate(-28deg); transform-origin:0 50%;
+    background:linear-gradient(180deg, #f2f4f6, #8a909b);
+  }
+  /* Red LED on the headshell: an unlit dark red at rest, blinking bright
+     with a glow while a song plays. */
+  .tt-arm-led{
+    position:absolute; left:50%; bottom:21px; width:6px; height:6px; margin-left:-3px;
+    border-radius:50%; z-index:1;
+    background:radial-gradient(circle at 38% 35%, #7a2a2a, #3a0d0d 70%);
+    box-shadow:inset 0 0 0 .5px rgba(0,0,0,.6);
+  }
+  .tt-arm.playing .tt-arm-led{ animation:tt-led-blink 1s steps(1, end) infinite; }
+  @keyframes tt-led-blink{
+    0%{
+      background:radial-gradient(circle at 38% 35%, #ffffff 0 18%, #ff7070 38%, #ff1a1a 80%);
+      box-shadow:0 0 3px 1px #fff0f0, 0 0 7px 2px rgba(255,50,50,1), 0 0 16px 5px rgba(255,0,0,.7);
+    }
+    55%{
+      background:radial-gradient(circle at 38% 35%, #7a2a2a, #3a0d0d 70%);
+      box-shadow:inset 0 0 0 .5px rgba(0,0,0,.6);
+    }
+  }
+  @media (prefers-reduced-motion: reduce){
+    .tt-arm.playing .tt-arm-led{
+      animation:none;
+      background:radial-gradient(circle at 38% 35%, #ffffff 0 18%, #ff7070 38%, #ff1a1a 80%);
+      box-shadow:0 0 3px 1px #fff0f0, 0 0 7px 2px rgba(255,50,50,1), 0 0 16px 5px rgba(255,0,0,.7);
+    }
+  }
+  .tt-arm-rest{ /* rest post the arm parks in */
+    position:absolute; left:50%; width:14px; height:14px; margin-left:-7px; top:0; /* placed by JS */
+    border-radius:50%;
+    background:radial-gradient(circle at 40% 35%, #3b414c, #111418 70%);
+    box-shadow:0 0 0 1px #4a5364, 0 3px 6px rgba(0,0,0,.6);
+  }
+  .tt-arm-label, .tt-vol-label{
+    position:absolute; left:0; right:0; bottom:8px; text-align:center;
+    font-family:var(--font-mono); font-size:9px; letter-spacing:.12em;
+    text-transform:uppercase; color:#4b515e; pointer-events:none;
+  }
+
+  /* ---- Volume box ---- */
+  /* A studio channel fader: dB scale on the left, a dark cap with a
+     glowing index line in the slot, and a segmented LED ladder on the
+     right. The fader tops out at +6 dB; 0 dB (unity) sits at 71%. */
+  .tt-vol-col{
+    position:relative; display:flex; flex-direction:column; align-items:stretch;
+    padding:8px 8px 6px; gap:4px;
+  }
+  .tt-vol-head{ display:flex; align-items:center; justify-content:space-between; gap:4px; }
+  .tt-vol-val{
+    text-align:center; font-family:var(--font-mono); font-size:13px; font-weight:700;
+    color:#4ade80; text-shadow:0 0 8px rgba(74,222,128,.35);
+  }
+  .tt-vol-val.muted{ color:#f43f5e; text-shadow:0 0 8px rgba(244,63,94,.4); }
+  .tt-vol-body{
+    flex:1 1 auto; display:flex; gap:6px; align-items:stretch; min-height:0;
+    justify-content:center; padding:12px 0; /* room for the cap to overhang the ends */
+  }
+  .tt-vol-scale{ position:relative; width:34px; flex:0 0 auto; }
+  .tt-vol-scale span{
+    position:absolute; right:0; transform:translateY(50%);
+    font-family:var(--font-mono); font-size:9.5px; line-height:1; color:#8b93a7; white-space:nowrap;
+  }
+  .tt-vol-scale span.boost{ color:#f472b6; }
+  .tt-vol-track{
+    position:relative; width:30px; flex:0 0 auto; cursor:pointer; touch-action:none;
+  }
+  .tt-vol-track::before{ /* the slot */
+    content:''; position:absolute; left:50%; top:0; bottom:0; width:6px; margin-left:-3px;
+    border-radius:3px; background:#050608;
+    box-shadow:inset 0 1px 3px rgba(0,0,0,.9), 0 0 0 1px #2b3140;
+  }
+  .tt-vol-track:focus-visible{ outline:2px solid var(--brass); outline-offset:3px; border-radius:6px; }
+  .tt-vol-knob{
+    position:absolute; left:50%; width:28px; height:30px; margin:0 0 -15px -14px;
+    border-radius:6px; pointer-events:none;
+    background:
+      linear-gradient(180deg, transparent 47%, #ff2d8a 47%, #ff2d8a 53%, transparent 53%),
+      repeating-linear-gradient(180deg, rgba(255,255,255,.07) 0 1px, transparent 1px 4px),
+      linear-gradient(180deg, #4a4f58 0%, #2a2e35 45%, #1a1d22 55%, #2e3239 100%);
+    box-shadow:0 0 10px rgba(255,45,138,.35), 0 4px 8px rgba(0,0,0,.7),
+               inset 0 1px 0 rgba(255,255,255,.15), inset 0 0 0 1px #0e1013;
+  }
+  /* LED ladder driven by the post-fader signal. Unlit segments keep a
+     dim tint of their colour, like a real meter behind smoked glass. */
+  .tt-meter{
+    display:flex; flex-direction:column-reverse; gap:3px; width:12px; flex:0 0 auto;
+  }
+  .tt-meter i{
+    --led:#22c55e;
+    flex:1 1 0; border-radius:2px;
+    background:color-mix(in srgb, var(--led) 16%, #0b0d10);
+    transition:background .06s linear, box-shadow .06s linear;
+  }
+  .tt-meter i.yel{ --led:#eab308; }
+  .tt-meter i.org{ --led:#f97316; }
+  .tt-meter i.red{ --led:#ef4444; }
+  .tt-meter i.on{ background:var(--led); box-shadow:0 0 6px var(--led); }
+  .audio-tbtn.tt-mute{ width:24px; height:24px; flex:0 0 auto; }
+  .audio-tbtn.tt-mute svg{ width:13px; height:13px; }
+
+  /* Spectrum -- a compact strip in the deck, drawn live from an
+     AnalyserNode while playing. */
+  .audio-spectrum-box{
+    position:relative; width:100%; height:65px;
+    background:radial-gradient(ellipse at 50% -10%, #171a22 0%, #0a0c10 70%);
+    border:1px solid #2b3140; border-radius:10px; overflow:hidden;
+  }
+  .audio-spectrum-box canvas{ display:block; width:100%; height:100%; }
+
+  /* Track title, sitting along the bottom of the visualizer over the
+     bars' reflection. A title too long for the box scrolls as a marquee
+     while the track plays, and sits still (cut off with an ellipsis)
+     otherwise. */
+  .audio-nowplaying{
+    position:absolute; left:0; right:0; bottom:0; z-index:1; margin:0;
+    padding:2px 12px 3px; pointer-events:none;
+    text-align:center; font-family:var(--font-mono); font-size:10.5px; font-weight:700;
+    line-height:12px; color:var(--brass-soft); text-shadow:0 1px 3px rgba(0,0,0,.9);
+    white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+    background:linear-gradient(180deg, rgba(10,12,16,0), rgba(10,12,16,.75) 55%);
+  }
+  .audio-nowplaying.marquee{
+    text-align:left; text-overflow:clip;
+    -webkit-mask-image:linear-gradient(90deg, transparent 0, #000 14px, #000 calc(100% - 14px), transparent 100%);
+            mask-image:linear-gradient(90deg, transparent 0, #000 14px, #000 calc(100% - 14px), transparent 100%);
+  }
+  .audio-nowplaying.marquee .np-track{
+    display:inline-block; animation:np-scroll var(--np-dur, 10s) linear infinite;
+  }
+  .np-gap{ display:inline-block; width:48px; }
+  /* The text is doubled (title, gap, title, gap), so sliding by half its
+     width lands exactly where it started -- a seamless loop. */
+  @keyframes np-scroll{ from{ transform:translateX(0); } to{ transform:translateX(-50%); } }
+  @media (prefers-reduced-motion:reduce){
+    .audio-nowplaying.marquee .np-track{ animation:none; }
+  }
+
+
+  /* Phones: slimmer boxes and a smaller record so the top row fits. */
+  @media (max-width:560px){
+    .turntable{
+      --disc-size:clamp(112px, calc(100vw - 228px), 170px);
+      --arm-col:50px; --vol-col:84px;
+      column-gap:8px; row-gap:10px; padding:10px;
+      margin-left:-17px; margin-right:-17px; /* 7px from the dashed border: 24px padding - 17px */
+    }
+    .tt-arm-col{ --plinth:36px; --bearing:16px; }
+    .tt-arm-weight{ width:18px; height:18px; margin-left:-9px; top:-30px; }
+    .tt-arm-stub{ top:-12px; height:12px; }
+    .tt-lever{ height:18px; }
+    .tt-vol-scale .m-hide{ display:none; }
+    .tt-vol-col{ padding:6px 5px 4px; }
+    .tt-vol-val{ font-size:11px; }
+    .audio-tbtn.tt-mute{ width:20px; height:20px; }
+    .audio-tbtn.tt-mute svg{ width:11px; height:11px; }
+    .tt-vol-body{ padding:10px 0; }
+    .tt-vol-scale{ width:26px; }
+    .tt-vol-scale span{ font-size:8px; }
+    .tt-vol-track{ width:24px; }
+    .tt-vol-knob{ width:22px; height:22px; margin:0 0 -11px -11px; }
+    .tt-meter{ width:9px; }
+    .tt-arm-label, .tt-vol-label{ display:none; }
+    .tt-deck{ padding:8px; }
+    .tt-deck .audio-transport{ gap:4px; }
+    .audio-transport .audio-tbtn{ width:28px; height:28px; }
+    .audio-spectrum-box{ height:60px; }
+    .audio-transport .audio-tbtn-play{ width:47px; height:47px; }
+    .audio-transport .audio-tbtn-play svg{ width:29px; height:29px; }
+  }
+
+  /* ---- Seek bar ---- */
+  .audio-seek{
+    display:flex; align-items:center; gap:10px; max-width:640px;
+    margin:6px auto 0; padding:0 4px;
+  }
+  .audio-time{
+    font-family:var(--font-mono); font-size:10.5px; color:#7b8290; flex:0 0 auto; width:32px;
+  }
+  #audio-time-dur{ text-align:right; }
+  .audio-seek-track{
+    position:relative; flex:1 1 auto; height:14px; display:flex; align-items:center;
+    cursor:pointer;
+  }
+  .audio-seek-track::before{
+    content:''; position:absolute; left:0; right:0; height:4px; border-radius:2px;
+    background:#2b3140;
+  }
+  .audio-seek-fill{
+    position:absolute; left:0; height:4px; border-radius:2px; width:0%;
+    background:linear-gradient(90deg, var(--brass), var(--brass-soft));
+  }
+  .audio-seek-knob{
+    position:absolute; left:0%; width:11px; height:11px; border-radius:50%;
+    background:var(--brass-soft); transform:translateX(-50%);
+    box-shadow:0 0 0 3px rgba(201,161,90,.2);
+    transition:transform .15s ease, box-shadow .15s ease;
+  }
+  /* Grabbed: the handle grows under the finger so it's easy to see and hold. */
+  .audio-seek-track.dragging .audio-seek-knob{
+    transform:translateX(-50%) scale(1.9);
+    box-shadow:0 0 0 2px rgba(201,161,90,.35), 0 0 10px 2px rgba(232,200,140,.55);
+  }
+
+  .audio-transport{
+    display:flex; align-items:center; justify-content:center; gap:14px;
+    margin:6px 0 0; position:relative;
+  }
+  /* "Pause between songs" toggle: at the left of the transport, only while a
+     personal playlist is chosen. Counts the pause down when one is running. */
+  .audio-gap{
+    position:absolute; left:4px; top:50%; transform:translateY(-50%);
+    display:flex; align-items:center; gap:3px; height:24px; padding:0 7px 0 5px;
+    border-radius:12px; border:1px solid #2b3140; background:rgba(35,42,54,.6); color:#6b7280;
+    font:600 10.5px/1 var(--font-mono); cursor:pointer;
+    transition:color .2s ease, border-color .2s ease, background .2s ease;
+  }
+  .audio-gap[hidden]{ display:none; }
+  .audio-gap svg{ width:13px; height:13px; fill:none; stroke:currentColor; stroke-width:2; stroke-linecap:round; }
+  .audio-gap:hover{ color:#c9cdd4; border-color:#4a5364; }
+  .audio-gap.on{ color:#1a1406; background:var(--brass); border-color:var(--brass); }
+  .audio-gap.counting{ color:#0f2a18; background:#86efac; border-color:#86efac; }
+  /* Phones: a small round icon beside Shuffle; the seconds replace the icon
+     while a pause counts down. */
+  @media (max-width:560px){
+    /* In the row itself here, not floating over it, so it can't overlap. */
+    .audio-gap{ position:static; transform:none; flex:0 0 auto; width:24px; padding:0; justify-content:center; }
+    .audio-gap span{ display:none; }
+    .audio-gap.counting svg{ display:none; }
+    .audio-gap.counting span{ display:inline; font-size:9.5px; }
+  }
+  @media (max-width:360px){
+    .audio-transport.with-gap .audio-tbtn:not(.audio-tbtn-play){ width:26px; height:26px; }
+  }
+  .audio-tbtn{
+    flex:0 0 auto; width:29px; height:29px; border-radius:50%;
+    background:rgba(35,42,54,.6); border:1px solid #2b3140; color:#9aa0aa;
+    cursor:pointer; display:flex; align-items:center; justify-content:center;
+    transition:color .15s ease, border-color .15s ease, background .15s ease;
+  }
+  .audio-tbtn svg{ width:14.5px; height:14.5px; fill:none; stroke:currentColor; stroke-width:1.8; stroke-linecap:round; stroke-linejoin:round; }
+  .audio-tbtn:hover{ color:#e9e6de; border-color:#4a5364; }
+  .audio-tbtn.active{ color:var(--room); background:var(--brass); border-color:var(--brass); }
+  .audio-tbtn-play{
+    width:53px; height:53px; background:#aaadb2; border-color:#aaadb2; color:#181c22;
+    position:relative;
+    transition:transform .28s cubic-bezier(.34,1.56,.64,1), box-shadow .25s ease,
+               background .3s ease, border-color .3s ease, filter .2s ease;
+  }
+  /* Light gray while stopped, light green while a song plays. */
+  .audio-tbtn-play.is-playing{ background:#86efac; border-color:#86efac; color:#0f2a18; }
+  .audio-tbtn-play svg{ width:32px; height:32px; fill:currentColor; stroke:none; }
+  /* Hover: springs up with a golden glow, a ring ripples out, the icon nudges.
+     Mouse only -- on a phone a tap would leave it stuck "hovered". */
+  .audio-tbtn-play::after{
+    content:''; position:absolute; inset:-2px; border-radius:50%; pointer-events:none;
+    border:2px solid rgba(232,200,140,.85); opacity:0;
+  }
+  @media (hover:hover){
+    .audio-tbtn-play:hover{
+      transform:scale(1.12); filter:brightness(1.08);
+      box-shadow:0 0 0 3px rgba(201,161,90,.28), 0 0 18px rgba(232,200,140,.5);
+    }
+    .audio-tbtn-play.is-playing:hover{
+      box-shadow:0 0 0 3px rgba(74,222,128,.3), 0 0 18px rgba(134,239,172,.55);
+    }
+    .audio-tbtn-play:hover::after{ animation:play-ripple 1.3s ease-out infinite; }
+    .audio-tbtn-play:hover svg{ animation:play-nudge .5s ease; }
+  }
+  .audio-tbtn-play:active{ transform:scale(.95); transition-duration:.08s; }
+  @keyframes play-ripple{
+    0%{ opacity:.9; transform:scale(1); }
+    100%{ opacity:0; transform:scale(1.65); }
+  }
+  @keyframes play-nudge{
+    0%, 100%{ transform:scale(1); }
+    40%{ transform:scale(1.18); }
+    70%{ transform:scale(.94); }
+  }
+  @media (prefers-reduced-motion: reduce){
+    .audio-tbtn-play, .audio-tbtn-play:hover{ transform:none; transition:box-shadow .2s ease; }
+    .audio-tbtn-play:hover::after, .audio-tbtn-play:hover svg{ animation:none; }
+  }
+
+  .lib-toolbar.with-label{ justify-content:space-between; }
+  .playlist-label{
+    font-family:var(--font-mono); font-size:11px; letter-spacing:.05em;
+    color:#8b93a7; text-transform:uppercase;
+  }
+  .lib-card{
+    background:none; border:0; padding:0; font:inherit; color:inherit;
+    cursor:pointer; display:flex; flex-direction:column; align-items:center; gap:8px;
+  }
+  .lib-cover{
+    width:100%; aspect-ratio:3/4; border-radius:7px; position:relative;
+    background:linear-gradient(155deg,#2b3040 0%,#1a1d25 62%);
+    border:1px solid rgba(201,161,90,.28);
+    box-shadow:0 6px 16px rgba(0,0,0,.45);
+    display:flex; align-items:center; justify-content:center; overflow:hidden;
+    transition:transform .12s ease, border-color .12s ease, box-shadow .12s ease;
+  }
+  .lib-card:hover .lib-cover{
+    transform:translateY(-3px); border-color:var(--brass);
+    box-shadow:0 10px 22px rgba(0,0,0,.55);
+  }
+  /* five faint staff lines, so a cover reads as sheet music at a glance */
+  .lib-cover::before{
+    content:''; position:absolute; left:11%; right:11%; top:30%; height:27px;
+    background:repeating-linear-gradient(to bottom,
+      rgba(233,230,222,.20) 0 1px, transparent 1px 6.5px);
+  }
+  .lib-cover span{
+    position:relative; z-index:1; padding:0 8px; max-height:74%; overflow:hidden;
+    font-family:var(--font-display); font-size:12.5px; line-height:1.25;
+    color:var(--brass-soft); text-shadow:0 1px 3px rgba(0,0,0,.9);
+  }
+  .lib-name{
+    font-size:12px; line-height:1.3; color:#e9e6de; max-width:100%;
+    overflow:hidden; display:-webkit-box; -webkit-line-clamp:2;
+    -webkit-box-orient:vertical;
+  }
+  .lib-sub{ font-family:var(--font-mono); font-size:10.5px; color:#6b7280; }
+
+  /* ---- Mixer / Piano switch ---- */
+  .mixer-tabs{
+    display:flex; gap:8px; justify-content:center; margin:0 0 10px;
+    grid-column:2; justify-self:center;
+  }
+  .mixer-tab{
+    font-family:var(--font-mono); font-size:11px; letter-spacing:.06em;
+    text-transform:uppercase; padding:6px 20px; border-radius:7px;
+    border:1px solid #3a4150; background:rgba(35,42,54,.6); color:#9aa0aa;
+    cursor:pointer; transition:color .15s ease, border-color .15s ease,
+                              background .15s ease;
+  }
+  .mixer-tab:hover{ color:#e9e6de; border-color:#4a5364; }
+  .mixer-tab.active{
+    color:var(--room); background:var(--brass); border-color:var(--brass);
+    font-weight:700;
+  }
+  .bottom-mixer.collapsed .mixer-tabs{ display:none; }
+
+  /* ---- Lyrics ---- */
+  .lyrics-tab .lyrics-caret{ font-size:9px; margin-left:3px; }
+  .lyrics-tab.open, .lyrics-tab.on{ color:var(--brass-soft); border-color:var(--brass); }
+  .lyrics-menu{
+    position:fixed; z-index:2100; min-width:180px; padding:6px;
+    background:#1d222c; border:1px solid #3a4150; border-radius:10px;
+    box-shadow:0 -10px 30px rgba(0,0,0,.6);
+  }
+  .lyrics-menu[hidden]{ display:none; }
+  .lyrics-menu-title{
+    font-family:var(--font-mono); font-size:10px; letter-spacing:.08em; text-transform:uppercase;
+    color:#6b7280; padding:4px 8px 6px;
+  }
+  .lyrics-menu button{
+    display:flex; width:100%; align-items:center; gap:10px; padding:8px 10px; border:0; border-radius:6px;
+    background:none; color:#e9e6de; font:inherit; font-size:13px; text-align:left; cursor:pointer;
+  }
+  .lyrics-menu button:hover, .lyrics-menu button:focus-visible{ background:#2b3140; outline:none; }
+  .lyrics-menu button.current{ color:var(--brass-soft); }
+  .lyrics-menu .dot, .lyrics-dot{
+    width:10px; height:10px; border-radius:50%; flex:0 0 auto; background:var(--c, var(--brass));
+  }
+  .lyrics-menu .empty{ padding:8px 10px; font-size:12.5px; color:#8b93a7; }
+
+  /* See-through panel over the score: the page shows faintly behind it. */
+  .lyrics-view{
+    position:fixed; z-index:150; left:12px; right:12px; top:80px; bottom:280px; /* JS keeps these between the bars */
+    max-width:760px; margin:0 auto;
+    display:flex; flex-direction:column;
+    background:rgba(10,12,16,.89);
+    -webkit-backdrop-filter:blur(5px); backdrop-filter:blur(5px);
+    border:1px solid rgba(201,161,90,.35); border-radius:14px;
+    box-shadow:0 16px 40px rgba(0,0,0,.5);
+  }
+  .lyrics-view[hidden]{ display:none; }
+  .lyrics-head{
+    display:flex; align-items:center; gap:10px; padding:10px 12px;
+    border-bottom:1px solid rgba(255,255,255,.08); flex:0 0 auto;
+  }
+  .lyrics-voice{
+    font-family:var(--font-display); font-weight:700; font-size:16px; color:#f0ede4;
+    flex:1 1 auto; min-width:0; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+  }
+  .lyrics-play{
+    width:36px; height:36px; border-radius:50%; border:0; cursor:pointer; flex:0 0 auto;
+    background:#f2efe8; color:#181c22; display:flex; align-items:center; justify-content:center;
+  }
+  .lyrics-play svg{ width:17px; height:17px; fill:currentColor; }
+  .lyrics-play:hover{ transform:scale(1.05); }
+  .lyrics-toggle{
+    display:flex; align-items:center; gap:6px; cursor:pointer; flex:0 0 auto;
+    font-family:var(--font-mono); font-size:11px; letter-spacing:.04em; color:#cfd3da;
+  }
+  .lyrics-toggle[hidden]{ display:none; }
+  .lyrics-toggle input{ position:absolute; opacity:0; width:0; height:0; }
+  .lyrics-switch{
+    position:relative; width:32px; height:18px; border-radius:9px; background:#2b3140;
+    border:1px solid #3a4150; transition:background .15s ease;
+  }
+  .lyrics-switch::after{
+    content:''; position:absolute; top:2px; left:2px; width:12px; height:12px; border-radius:50%;
+    background:#9aa0aa; transition:transform .15s ease, background .15s ease;
+  }
+  .lyrics-toggle input:checked + .lyrics-switch{ background:rgba(201,161,90,.35); border-color:var(--brass); }
+  .lyrics-toggle input:checked + .lyrics-switch::after{ transform:translateX(14px); background:var(--brass-soft); }
+  .lyrics-toggle input:focus-visible + .lyrics-switch{ outline:2px solid var(--brass); outline-offset:2px; }
+  .lyrics-close{
+    width:30px; height:30px; border-radius:50%; flex:0 0 auto; cursor:pointer;
+    border:1px solid #3a4150; background:rgba(35,42,54,.7); color:#cfd3da;
+    font-size:20px; line-height:1; display:flex; align-items:center; justify-content:center;
+  }
+  .lyrics-close:hover{ color:#fff; border-color:#6b7280; }
+  .lyrics-body{
+    flex:1 1 auto; overflow-y:auto; overscroll-behavior:contain;
+    padding:14px 18px 40%; text-align:center;
+  }
+  .lyrics-line{
+    margin:0 0 10px; font-family:var(--font-display); font-size:clamp(17px, 4.4vw, 22px);
+    line-height:1.5; color:#8b93a7;
+    text-wrap:balance; /* a wrapped line splits evenly instead of leaving one word dangling */
+  }
+  .lyrics-line.stanza-end{ margin-bottom:28px; } /* gap after a long rest -- usually a verse break */
+  .lyrics-w{ cursor:pointer; border-radius:4px; padding:0 2px; transition:color .15s ease, background .15s ease; }
+  .lyrics-w:hover{ color:#e9e6de; }
+  .lyrics-w.sung{ color:#d6d2c6; }
+  /* The word being sung, lit in the voice's own mixer colour (set as --voice by JS). */
+  .lyrics-w.now{
+    color:#111418; background:var(--voice, var(--brass-soft));
+    box-shadow:0 0 12px color-mix(in srgb, var(--voice, var(--brass-soft)) 55%, transparent);
+  }
+  .lyrics-empty{ color:#8b93a7; font-size:14px; margin-top:20px; }
+  /* "Tenor is singing" -- shown while the chosen voice sits out a long rest
+     (more than 4 counts) and another voice carries the tune. */
+  .lyrics-view{ position:fixed; } /* anchor for the pill */
+  .lyrics-solo{
+    position:absolute; left:50%; top:50%; transform:translate(-50%, -50%); /* centred in the panel */
+    display:flex; align-items:center; gap:12px; max-width:calc(100% - 28px);
+    padding:11px 21px; border-radius:999px; pointer-events:none; z-index:2;
+    background:rgba(20,24,31,.94); border:1px solid var(--solo, var(--brass));
+    box-shadow:0 6px 18px rgba(0,0,0,.55), 0 0 12px color-mix(in srgb, var(--solo, var(--brass)) 35%, transparent);
+    font-family:var(--font-mono); font-size:18px; color:#e9e6de; white-space:nowrap;
+    animation:solo-in .25s ease;
+  }
+  .lyrics-solo[hidden]{ display:none; }
+  .lyrics-solo .dots{ display:flex; gap:4px; }
+  .lyrics-solo .dot{ width:14px; height:14px; border-radius:50%; background:var(--c); }
+  .lyrics-solo .txt{ overflow:hidden; text-overflow:ellipsis; }
+  @keyframes solo-in{ from{ opacity:0; transform:translate(-50%, -50%) scale(.9); } to{ opacity:1; transform:translate(-50%, -50%) scale(1); } }
+  @media (max-width:560px){
+    .lyrics-view{ left:8px; right:8px; }
+    .lyrics-head{ gap:8px; padding:8px 10px; }
+    .lyrics-voice{ font-size:14px; }
+    .mixer-tabs .mixer-tab{ padding:6px 9px; }
+    .mixer-tabs{ gap:6px; }
+    /* Export shrinks to a download icon so the record button, the three
+       tabs and Export all fit on one line without overlapping. */
+    .export-btn{ padding:6px 8px; gap:4px; }
+    .export-btn .export-label{ display:none; }
+    .export-btn .export-ico{ width:17px; height:19px; }
+  }
+  /* #staff-list is display:flex, which outranks the hidden attribute's own
+     display:none -- without this the mixer stays on screen under the piano. */
+  #staff-list[hidden], #piano-panel[hidden]{ display:none !important; }
+
+  /* ---- the keyboard ---- */
+  #piano-panel{ --kw:34px; --kh:clamp(96px, 20vh, 172px); }
+  .bottom-mixer.collapsed #piano-panel{ display:none; }
+
+  /* The navigator: the whole 88 keys at a glance, with a window showing what
+     the big keyboard is currently showing. Without it there is no way to tell
+     where in the instrument you are looking. */
+  .piano-nav{
+    position:relative; height:34px; margin:0 auto 8px; max-width:900px;
+    border-radius:5px; overflow:hidden; cursor:pointer;
+    background:linear-gradient(180deg,#2b3244,#1b2130);
+    border:1px solid #39415280; touch-action:none;
+  }
+  .piano-nav .pk{ position:absolute; top:0; }
+  .piano-nav .pk.white{
+    background:linear-gradient(180deg,#f6f7fa,#c8ccd6); height:100%;
+    border-right:1px solid #9aa0ae;
+  }
+  .piano-nav .pk.black{
+    background:linear-gradient(180deg,#2a2f3b,#12151c); height:62%;
+    border-radius:0 0 1px 1px; z-index:2;
+  }
+  .piano-nav-window{
+    position:absolute; top:0; bottom:0; z-index:3; pointer-events:none;
+    background:rgba(201,161,90,.24);
+    border:1.5px solid var(--brass); border-radius:3px;
+    box-shadow:0 0 0 100vmax rgba(10,12,16,.55);
+  }
+
+  .piano-stage{ display:flex; align-items:stretch; gap:6px; max-width:1140px; margin:0 auto; }
+  .piano-arrow{
+    flex:0 0 26px; border:1px solid #3a4150; border-radius:6px;
+    background:rgba(35,42,54,.6); color:#cfd3da; font-size:18px; line-height:1;
+    cursor:pointer; padding:0;
+  }
+  .piano-arrow:hover{ color:var(--brass-soft); border-color:var(--brass); }
+  .piano-scroll{
+    flex:1 1 auto; overflow-x:auto; overflow-y:hidden; border-radius:6px;
+    background:#0e1116; padding:6px 0 0; scrollbar-width:thin;
+  }
+  .piano-keys{
+    position:relative; height:var(--kh); margin:0 auto;
+    /* the black keys are absolutely placed over the white ones, so the row
+       has to be as wide as the white keys alone */
+  }
+
+  .pkey{ position:absolute; top:0; box-sizing:border-box; }
+  .pkey.white{
+    width:var(--kw); height:100%;
+    background:linear-gradient(180deg,#fffef9 0%,#f3f1e9 72%,#ddd9cd 100%);
+    border:1px solid #a8a49a; border-radius:0 0 5px 5px;
+    box-shadow:inset 0 -3px 4px -2px rgba(0,0,0,.28);
+    display:flex; align-items:flex-end; justify-content:center; padding-bottom:5px;
+    z-index:1;
+  }
+  .pkey.black{
+    width:calc(var(--kw) * .62); height:62%;
+    background:linear-gradient(180deg,#3a3f4b 0%,#15181f 68%,#0a0c11 100%);
+    border:1px solid #05070a; border-radius:0 0 4px 4px;
+    box-shadow:0 3px 5px -1px rgba(0,0,0,.7), inset 0 -2px 3px rgba(255,255,255,.10);
+    z-index:3;
+  }
+
+  .pkey-label{
+    font-family:var(--font-mono); font-size:9.5px; line-height:1;
+    padding:2.5px 3px; border-radius:3px; color:#3a3f47;
+    -webkit-user-select:none; user-select:none;
+  }
+  /* Octave tints, so a glance tells you which register you are in -- the
+     labels alone all read the same at this size. */
+  .oct-1,.oct-2{ background:#e7e2ef; }
+  .oct-3{ background:#f6edd4; }
+  .oct-4{ background:#d9f0da; }
+  .oct-5{ background:#d2eff5; }
+  .oct-6{ background:#fbe0e8; }
+  .oct-7,.oct-8{ background:#e6e4f7; }
+
+  /* Pressed. The colour is the staff's own, so four voices on one chord read
+     as four different keys rather than one anonymous highlight. */
+  .pkey.on{ --lit:var(--brass); }
+  .pkey.white.on{
+    background:linear-gradient(180deg,
+      color-mix(in srgb, var(--lit) 62%, #fffef9) 0%,
+      color-mix(in srgb, var(--lit) 78%, #cfcabb) 100%);
+    transform:translateY(1.5px);
+    box-shadow:inset 0 -2px 5px -1px rgba(0,0,0,.35);
+  }
+  .pkey.black.on{
+    background:linear-gradient(180deg,
+      color-mix(in srgb, var(--lit) 70%, #2a2f3b) 0%,
+      color-mix(in srgb, var(--lit) 88%, #0a0c11) 100%);
+    transform:translateY(1.5px);
+  }
+  /* Older engines have no color-mix; a flat fill is still unmistakably "down". */
+  @supports not (background: color-mix(in srgb, red 50%, blue)){
+    .pkey.white.on, .pkey.black.on{ background:var(--lit); }
+  }
+  .pkey.white.on .pkey-label{ background:rgba(255,255,255,.72); }
+
+  /* ---- show / hide a staff ---- */
+  .sc-show{
+    display:flex; align-items:flex-start; gap:5px; cursor:pointer;
+    width:100%; padding:0 1px;
+  }
+  /* The eye: tap to show only this staff, tap again to show them all. Lit
+     in the voice's colour while it's the one showing. */
+  .sc-eye{
+    flex:0 0 auto; width:18px; height:16px; padding:0; margin:-1px 0 0; border:0; border-radius:4px;
+    background:none; color:#7b8290; cursor:pointer;
+    display:flex; align-items:center; justify-content:center;
+    transition:color .15s ease, filter .15s ease;
+  }
+  .sc-eye svg{ width:16px; height:16px; fill:none; stroke:currentColor; stroke-width:1.5; stroke-linecap:round; stroke-linejoin:round; }
+  .sc-eye .eye-slash{ display:none; }
+  .sc-eye:hover{ color:#c9cdd4; }
+  .sc-eye.focused{ color:var(--stc, var(--brass)); filter:drop-shadow(0 0 3px var(--stc, var(--brass))); }
+  .sc-eye.focused .eye-pupil{ fill:currentColor; }
+  .staff-card.staff-hidden .sc-eye .eye-slash{ display:inline; }
+  .sc-show .sc-name{ flex:1 1 auto; min-width:0; text-align:left; }
+  /* A hidden staff still sings, so its card must not read as switched off --
+     just as quieter than the ones you can see. */
+  .staff-card.staff-hidden .sc-name{ color:#727884; }
+  .staff-card.staff-hidden{ border-top-color:#3a4150; }
+
+  /* ---- MIDI capture ---- */
+  .midi-home{ display:flex; flex-direction:column; align-items:center; gap:6px; margin-top:14px; }
+  .midi-home-btn{
+    font:inherit; font-size:13px; padding:9px 18px; border-radius:9px;
+    border:1px solid rgba(201,161,90,.45); background:rgba(201,161,90,.10);
+    color:var(--brass-soft); cursor:pointer; display:flex; align-items:center; gap:9px;
+  }
+  .midi-home-btn:hover{ border-color:var(--brass); background:rgba(201,161,90,.20); }
+  .midi-home-btn .dot{
+    width:11px; height:11px; border-radius:50%; background:#e0403f;
+    box-shadow:0 0 6px rgba(224,64,63,.75);
+  }
+  #midi-home-note{
+    font-family:var(--font-mono); font-size:12px; color:#6b7280; min-height:15px;
+  }
+
+  /* Three real grid columns instead of absolute-positioned overlays: each
+     side gets its own reserved space, so the tabs and the record strip
+     can never physically collide no matter how long a device name gets
+     or how narrow the screen is -- this replaces the old max-width guess. */
+  .mixer-bar{
+    display:grid; grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);
+    align-items:center; gap:8px;
+  }
+  .midi-rec{
+    grid-column:1; justify-self:start; min-width:0;
+    display:flex; align-items:center; gap:9px; max-width:100%;
+  }
+  /* Record button: a glossy red disc with the MIDI glyph on a black panel
+     in its middle (connected / not connected), in place of the old plain
+     dot, the separate plug icon and the "No MIDI device" text. */
+  .midi-rec-btn{
+    flex:0 0 auto; width:36px; height:36px; border-radius:50%; padding:0;
+    display:flex; align-items:center; justify-content:center;
+    border:1px solid #5a1414; cursor:pointer;
+    background:
+      radial-gradient(circle at 32% 26%, rgba(255,255,255,.75) 0%, rgba(255,255,255,0) 30%),
+      radial-gradient(circle at 50% 110%, rgba(0,0,0,.35) 0%, rgba(0,0,0,0) 55%),
+      linear-gradient(180deg, #ef5a52 0%, #c8261f 55%, #8e140f 100%);
+    box-shadow:0 2px 5px rgba(0,0,0,.55);
+    transition:transform .12s ease, box-shadow .12s ease;
+  }
+  .midi-glyph{ width:20px; height:20px; display:block; }
+  .midi-glyph .panel{ fill:#0c0e12; stroke:rgba(255,255,255,.18); stroke-width:.6; }
+  .midi-glyph .wave, .midi-glyph .loop, .midi-glyph .din{
+    fill:none; stroke:#bfe6ff; stroke-width:1.3; stroke-linecap:round; stroke-linejoin:round;
+  }
+  .midi-glyph .wave{ stroke:#e6f6ff; filter:drop-shadow(0 0 1px #7fd0ff); }
+  .midi-glyph .pins circle{ fill:#bfe6ff; }
+  .midi-glyph .nope circle{ fill:rgba(255,255,255,.85); stroke:#ff2d2d; stroke-width:1.4; }
+  .midi-glyph .nope line{ stroke:#ff2d2d; stroke-width:1.4; stroke-linecap:round; }
+  .midi-rec-btn.connected .nope{ display:none; }
+  .midi-rec-btn.connected .din{ stroke:#6ee7a0; }
+  .midi-rec-btn.connected .pins circle{ fill:#6ee7a0; }
+  /* While recording the glyph gives way to the stop square below. */
+  .midi-rec-btn.armed .midi-glyph{ display:none; }
+  .midi-rec-btn:hover{ transform:scale(1.06); }
+  .midi-rec-btn.armed{
+    box-shadow:0 0 0 0 rgba(224,64,63,.7);
+    animation:midi-pulse 1.15s ease-out infinite;
+  }
+  /* A square inside the circle is the universal "this is recording, press to
+     stop" -- a red dot alone reads the same whether it is running or not. */
+  .midi-rec-btn.armed::after{
+    content:''; display:block; width:12px; height:12px;
+    background:#fff; border-radius:2px;
+  }
+  @keyframes midi-pulse{
+    0%{ box-shadow:0 0 0 0 rgba(224,64,63,.65); }
+    70%{ box-shadow:0 0 0 11px rgba(224,64,63,0); }
+    100%{ box-shadow:0 0 0 0 rgba(224,64,63,0); }
+  }
+  .midi-dev{
+    font-family:var(--font-mono); font-size:11px; color:#9aa0aa;
+    white-space:nowrap; overflow:hidden; text-overflow:ellipsis; min-width:0;
+  }
+  .midi-dev.live{ color:var(--brass-soft); }
+  .midi-dev:empty{ display:none; } /* only the note count while recording */
+  .bottom-mixer.collapsed .midi-rec{ display:none; }
+
+  /* ---- export ---- */
+  .export-bar{ grid-column:3; justify-self:end; }
+  /* Export icon: a sheet of music (note + keyboard) with a download arrow. */
+  .export-ico{ display:block; width:15px; height:17px; flex:0 0 auto; fill:none; stroke:currentColor; stroke-width:1.5; stroke-linecap:round; stroke-linejoin:round; }
+  .export-ico .fill{ fill:currentColor; stroke:none; }
+  @media (max-width:380px){
+    .midi-rec-btn{ width:32px; height:32px; }
+    .midi-glyph{ width:18px; height:18px; }
+    .mixer-tabs .mixer-tab{ padding:6px 7px; letter-spacing:.02em; }
+  }
+  .export-btn{
+    font-family:var(--font-mono); font-size:11px; letter-spacing:.05em;
+    text-transform:uppercase; padding:6px 14px; border-radius:7px;
+    border:1px solid #3a4150; background:rgba(35,42,54,.6); color:#9aa0aa;
+    cursor:pointer; white-space:nowrap; display:flex; align-items:center; gap:7px;
+  }
+  .export-btn:hover{ color:var(--brass-soft); border-color:var(--brass); }
+  .export-btn.working{
+    color:var(--room); background:var(--brass); border-color:var(--brass);
+  }
+  .export-caret{ font-size:9px; opacity:.8; }
+
+  /* Opens upward: the bar sits at the bottom of the window, so a menu dropping
+     down would be off screen. Fixed, and moved to the body when it opens --
+     .bottom-mixer-inner is overflow-y:auto and clips its children, and fixed
+     alone does not escape that here, because .export-bar (transform) and
+     .bottom-mixer (backdrop-filter) each make themselves the containing block
+     for a fixed descendant, putting it back inside the clip. */
+  .export-menu{
+    position:fixed; z-index:200;
+    background:#1b202a; border:1px solid #3a4150; border-radius:9px;
+    padding:5px; min-width:186px;
+    display:flex; flex-direction:column; gap:2px;
+    box-shadow:0 -10px 28px rgba(0,0,0,.6);
+  }
+  .export-menu[hidden]{ display:none; }
+  .export-menu button{
+    font-family:var(--font-body); font-size:12.5px; text-align:left;
+    padding:8px 10px; border-radius:6px; border:1px solid transparent;
+    background:transparent; color:#cfd3da; cursor:pointer;
+    display:flex; justify-content:space-between; align-items:baseline; gap:12px;
+  }
+  .export-menu button:hover{ background:rgba(201,161,90,.14); color:var(--brass-soft); }
+  .export-menu .hint{
+    font-family:var(--font-mono); font-size:10px; color:#6b7280;
+  }
+  .export-menu button:hover .hint{ color:var(--brass); }
+  .bottom-mixer.collapsed .export-bar{ display:none; }
+  /* The record strip and Export belong with the keyboard, so the Mixer tab
+     does not carry them. Hiding rather than removing keeps the tabs centred:
+     both are positioned out of the flow, so nothing shifts either way. */
+  .mixer-bar:not(.on-piano) .midi-rec,
+  .mixer-bar:not(.on-piano) .export-bar{ display:none; }
+
+  /* ---- keyboard voice picker ---- */
+  /* It sits in the right-hand group with Export. Making .export-bar a flex
+     row here rather than editing add_export.py works because equal-specificity
+     rules later in the sheet win, and it keeps the picker's layout in the file
+     that owns the picker. */
+  .export-bar{ display:flex; align-items:center; gap:10px; }
+  /* One height for both, set explicitly: a <select> and a <button> with the
+     same padding still come out a pixel or two apart, and side by side that
+     reads as a mistake. */
+  .key-voice, .export-btn{ height:30px; box-sizing:border-box; }
+  .key-voice{
+    font-family:var(--font-mono); font-size:11px; letter-spacing:.04em;
+    padding:0 26px 0 10px; border-radius:7px;
+    border:1px solid #3a4150; background:rgba(35,42,54,.6); color:#9aa0aa;
+    cursor:pointer; min-width:158px; max-width:208px;
+  }
+  .key-voice:hover{ color:var(--brass-soft); border-color:var(--brass); }
+  .key-voice optgroup{ background:#1b202a; color:#6b7280; font-style:normal; }
+  .key-voice option{ background:#1b202a; color:#cfd3da; }
+  /* It only changes the keyboard, so it belongs with the keyboard. */
+  .mixer-bar:not(.on-piano) .key-voice{ display:none; }
+  .bottom-mixer.collapsed .key-voice{ display:none; }

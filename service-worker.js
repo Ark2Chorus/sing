@@ -1,9 +1,11 @@
-// Bump this whenever index.html (or anything else in APP_SHELL) changes --
-// it's what forces the browser to fetch a fresh copy instead of serving a
-// stale cached one. Everything the app needs (fonts, libraries, the
-// voicebank audio) is already embedded inside index.html itself, so the
-// shell list here is short.
-const CACHE_VERSION = 'ark2-chorus-v106';
+// Bump this with every build -- it's what forces the browser to fetch a
+// fresh copy instead of serving a stale cached one.
+//
+// A file listed with ?v=<hash> never changes under that address (the hash is
+// of its contents; `py tools/stamp.py` rewrites them here and in index.html),
+// so a copy saved by an earlier build is kept instead of downloaded again.
+// That's what spares phones the ~20MB voicebank on builds that don't touch it.
+const CACHE_VERSION = 'ark2-chorus-v107';
 const APP_SHELL = [
   './',
   './index.html',
@@ -11,18 +13,49 @@ const APP_SHELL = [
   './icons/icon-192.png',
   './icons/icon-512.png',
   './icons/icon-512-maskable.png',
+  './icons/logo.jpg?v=ddaebaf042',
+  './css/app.css?v=8d5458d988',
+  './js/singer.js?v=ce28d90410',
+  './js/voicepack.js?v=9915a7387b',
+  './js/app.js?v=ef6169b618',
+  // The voice, dictionary and instrument samples, so everything plays offline.
+  './data/cmudict.js?v=40c42fbdaa',
+  './data/voicepack.js?v=4c0afdebe9',
+  './data/piano-samples.js?v=4974cea038',
+  './data/choir-samples.js?v=fc02f79d45',
+  './vendor/opensheetmusicdisplay.min.js?v=7d55739567',
+  './vendor/tone.min.js?v=9cf37a5a1b',
+  './vendor/jszip.min.js?v=ddd54a3a4a',
+  './vendor/lame.min.js?v=c1991df998',     // MP3 export
   // PDF.js for Music Sheet -- kept with the app so sheets open offline.
   './vendor/pdf.min.js',
   './vendor/pdf.worker.min.js',
   './vendor/page-flip.browser.js',   // StPageFlip -- the book-style page turn
 ];
+// How long opening the app waits for the site before using the saved page.
+const PAGE_WAIT_MS = 4000;
 
+// Each file is saved on its own and a failure doesn't fail the install: a
+// failed install would leave an older worker in charge, still answering
+// reloads with its own old page, however old that build is. Anything missed
+// here comes from the network until the page's "cache-fill" saves it.
 self.addEventListener('install', (event) => {
   event.waitUntil(
-    // cache: "reload" fetches each file fresh from the site, not from the
-    // browser's HTTP cache -- otherwise a new build could precache old files.
-    caches.open(CACHE_VERSION).then((cache) =>
-      cache.addAll(APP_SHELL.map((url) => new Request(url, { cache: "reload" }))))
+    caches.open(CACHE_VERSION).then((cache) => Promise.all(APP_SHELL.map(async (url) => {
+      try{
+        if (url.includes('?v=')){
+          const saved = await caches.match(url);
+          if (saved){ await cache.put(url, saved); return; }
+        }
+        // cache: "reload" fetches each file fresh from the site, not from the
+        // browser's HTTP cache -- otherwise a new build could precache old files.
+        await cache.add(new Request(url, { cache: "reload" }));
+      }catch(err){
+        // Left for cache-fill -- and an older copy under this name (from an
+        // earlier install of the same version) mustn't stand in for it.
+        await cache.delete(url).catch(() => {});
+      }
+    })))
   );
   self.skipWaiting();
 });
@@ -68,9 +101,9 @@ self.addEventListener('activate', (event) => {
   self.clients.claim();
 });
 
-// Cache-first for the app shell (index.html is ~26MB thanks to the
-// embedded voicebank -- once it's cached, this is what makes reopening the
-// app instant and offline-capable instead of re-downloading it every time).
+// Cache-first for the app shell (~27MB with the voicebank -- once it's
+// cached, this is what makes reopening the app instant and offline-capable
+// instead of re-downloading it every time).
 // Anything not in the shell just falls through to a normal network fetch.
 self.addEventListener('fetch', (event) => {
   if (event.request.method !== 'GET') return;
@@ -84,15 +117,28 @@ self.addEventListener('fetch', (event) => {
   const scope = new URL('./', self.location).pathname;
   if (url.pathname.startsWith(scope + 'singer/')) return;
 
-  // Opening the app: always answer with the saved page when there is one,
-  // whatever query string or path variant the phone opens it with -- so the
-  // installed app starts offline. (config.ark2 and version.json aren't page
-  // loads and aren't cached, so they always come fresh from the site.)
+  // Opening the app: the page (~30KB; everything heavy is in the ?v= files)
+  // comes from the site first, and the fresh copy is saved. The saved page
+  // is only for when the site can't be reached -- offline, or no answer
+  // within PAGE_WAIT_MS -- so a saved page from any older build can never
+  // keep coming back while the site is there. (config.ark2 and version.json
+  // aren't page loads and aren't cached; they always come fresh.)
   if (event.request.mode === 'navigate' && (url.pathname === scope || url.pathname === scope + 'index.html')){
-    event.respondWith(
-      caches.match('./index.html').then((cached) =>
-        cached || fetch(event.request).catch(() => caches.match('./')))
-    );
+    const fresh = fetch(event.request, { cache: 'no-cache' }).then(async (res) => {
+      if (res.ok && res.type === 'basic'){
+        const cache = await caches.open(CACHE_VERSION);
+        await cache.put('./index.html', res.clone());
+      }
+      return res;
+    });
+    event.waitUntil(fresh.catch(() => {}));
+    event.respondWith((async () => {
+      const slow = new Promise((resolve) => setTimeout(resolve, PAGE_WAIT_MS));
+      const first = await Promise.race([fresh.catch(() => null), slow]);
+      if (first && first.ok) return first;
+      const saved = (await caches.match('./index.html')) || (await caches.match('./'));
+      return saved || first || fresh;   // nothing saved: the site's answer, whenever it comes
+    })());
     return;
   }
 
