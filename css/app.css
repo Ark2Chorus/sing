@@ -790,7 +790,7 @@
     border-radius:6px; cursor:help;
   }
   .lib-rstat[hidden]{ display:none; }
-  .lib-rstat svg{ width:30px; height:23px; overflow:visible; }
+  .lib-rstat svg{ width:30px; height:25px; overflow:visible; }
   .lib-rstat .mic rect, .lib-rstat .mic path{ fill:none; stroke-width:1.5; stroke-linecap:round; stroke-linejoin:round; }
   .lib-rstat .mic-halo rect, .lib-rstat .mic-halo path{ fill:#14181f; stroke:#14181f; stroke-width:3.6; stroke-linecap:round; stroke-linejoin:round; }
   .lib-rstat .mic-halo path{ fill:none; }
@@ -799,9 +799,9 @@
   .lib-rstat[data-state="full"] .mic rect, .lib-rstat[data-state="full"] .mic path{ stroke:#4ade80; }
   /* what's behind the mic: blue cloud = Google Drive, green drive = this device */
   .lib-rstat .bg-cloud{ fill:#60a5fa; opacity:.85; }
-  .lib-rstat .bg-disk{ fill:#4ade80; opacity:.85; }
+  .lib-rstat .bg-disk{ fill:#4ade80; }
   .lib-rstat .bg-disk-line{ stroke:#0f2a18; stroke-width:1.2; stroke-linecap:round; opacity:.7; }
-  .lib-rstat .bg-disk-led{ fill:#0f2a18; opacity:.7; }
+  .lib-rstat .bg-disk-led{ fill:#0f2a18; opacity:.75; }
   .lib-rstat .mic{ fill:none; stroke-width:1.4; stroke-linecap:round; stroke-linejoin:round; }
   .lib-rstat[data-state="none"] .mic{ stroke:#5b6270; }
   .lib-rstat[data-state="partial"] .mic{ stroke:#f0c674; }

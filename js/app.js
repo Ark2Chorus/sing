@@ -2583,16 +2583,17 @@
         // rendered), and behind it where the renders are: a cloud for Google
         // Drive, a hard drive for this device, both when they're in both.
         const CLOUD = (x, y, k) => '<path class="bg-cloud" transform="translate(' + x + ' ' + y + ') scale(' + k + ')" d="M5 15h11.5a4 4 0 0 0 .6-7.95A5.6 5.6 0 0 0 6.3 6.1 4.5 4.5 0 0 0 5 15z"/>';
-        const DISK = (x, y, k) => '<g transform="translate(' + x + ' ' + y + ') scale(' + k + ')"><rect class="bg-disk" x="0" y="0" width="17" height="8" rx="2"/>' +
-          '<path class="bg-disk-line" d="M2.5 4h7"/><circle class="bg-disk-led" cx="13.5" cy="4" r="1.2"/></g>';
-        // the source sits in the upper-left corner, behind the mic
+        // a floppy disk: clipped corner, metal shutter on top, label below
+        const DISK = '<g transform="translate(1.2 9.6) scale(0.8)"><path class="bg-disk" d="M0 1.2A1.2 1.2 0 0 1 1.2 0H6l2 2v5.8A1.2 1.2 0 0 1 6.8 9H1.2A1.2 1.2 0 0 1 0 7.8z"/>' +
+          '<rect class="bg-disk-led" x="1.6" y="0" width="4" height="2.6"/><rect class="bg-disk-led" x="1.4" y="5" width="5.2" height="4"/></g>';
+        // the cloud (Google Drive) sits in the upper-left behind the mic; the disk (this device) in the same column, under it
         const back = where === 'cloud' ? CLOUD(-0.5, -2, 0.62)
-          : where === 'device' ? DISK(0, 0.5, 0.62)
-          : where === 'both' ? CLOUD(-0.5, -2.4, 0.55) + DISK(1.5, 3.8, 0.55) : '';
+          : where === 'device' ? DISK
+          : where === 'both' ? CLOUD(-0.5, -2, 0.62) + DISK : '';
         const mic = (cls) => '<g class="' + cls + '">' +
           '<rect x="12" y="1.5" width="5" height="9" rx="2.5"/>' +
           '<path d="M9.8 7.6a4.7 4.7 0 0 0 9.4 0M14.5 12.3v3.4M11.9 15.7h5.2"/></g>';
-        spot.innerHTML = '<svg viewBox="0 0 24 18" aria-hidden="true">' + back +
+        spot.innerHTML = '<svg viewBox="0 0 24 20" aria-hidden="true">' + back +
           mic('mic-halo') +
           (state === 'full' ? '<rect class="fill" x="12" y="1.5" width="5" height="9" rx="2.5"/>'
             : state === 'partial' ? '<path class="fill" d="M12 6h5v2a2.5 2.5 0 0 1-5 0z"/>' : '') +
