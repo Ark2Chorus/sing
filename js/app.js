@@ -4280,7 +4280,7 @@
   // compares this page's build with version.json fetched live, to tell a
   // fresh page from an old saved copy.
   const APP_VERSION = 'v1.1.0';
-  const APP_BUILD = 107;
+  const APP_BUILD = 108;
   el('app-version').textContent = 'Ark2 Chorus — ' + APP_VERSION + ' · build ' + APP_BUILD;
   el('app-version').insertAdjacentHTML('beforeend',
     '<span class="ver-ok" id="ver-ok" title="Up to date" aria-label="Up to date" hidden>✓</span>');
@@ -6288,6 +6288,14 @@
   // sounding -- locked on the lead voice, tap to drop the others. Outside the
   // lyrics view they're the mixer's plain Solo buttons.
   const SING_ICON = '<span class="sing-ico" aria-hidden="true"><i></i><i></i><i></i><i></i></span>';
+  // The lead voice wears the singer instead: a woman for soprano, mezzo, alto
+  // and child parts, a man for the rest, with music notes floating off while
+  // the music plays.
+  function leadIcon(t){
+    const w = singerEmoji(t).startsWith('\ud83d\udc69');
+    return '<span class="lead-ico" aria-hidden="true"><span class="lead-fig ' + (w ? 'f' : 'm') + '"></span>'
+      + '<b>\u266a</b><b>\u266b</b><b>\u266a</b></span>';
+  }
   function paintSoloButtons(){
     staffTracks.forEach(t => {
       const card = document.querySelector(`.staff-card[data-track-id="${t.id}"]`);
@@ -6300,8 +6308,8 @@
       b.classList.toggle('lead', !!lead);
       b.classList.toggle('on-solo', !inLyrics && !!t.soloed);
       b.setAttribute('aria-disabled', lead ? 'true' : 'false');
-      const want = singing ? SING_ICON : 'Solo';
-      if (b.dataset.face !== (singing ? 'sing' : 'solo')){ b.innerHTML = want; b.dataset.face = singing ? 'sing' : 'solo'; }
+      const face = lead ? 'lead' + singerEmoji(t) : singing ? 'sing' : 'solo';
+      if (b.dataset.face !== face){ b.innerHTML = lead ? leadIcon(t) : singing ? SING_ICON : 'Solo'; b.dataset.face = face; }
       b.title = lead ? t.label + ' is the voice in the lyrics view'
         : !inLyrics ? 'Hear only the soloed parts'
         : singing ? 'Stop ' + t.label + ' singing along'

@@ -5,7 +5,7 @@
 // of its contents; `py tools/stamp.py` rewrites them here and in index.html),
 // so a copy saved by an earlier build is kept instead of downloaded again.
 // That's what spares phones the ~20MB voicebank on builds that don't touch it.
-const CACHE_VERSION = 'ark2-chorus-v107';
+const CACHE_VERSION = 'ark2-chorus-v108';
 const APP_SHELL = [
   './',
   './index.html',
@@ -13,11 +13,13 @@ const APP_SHELL = [
   './icons/icon-192.png',
   './icons/icon-512.png',
   './icons/icon-512-maskable.png',
+  './icons/singer-male.png',
+  './icons/singer-female.png',
   './icons/logo.jpg?v=ddaebaf042',
-  './css/app.css?v=8d5458d988',
+  './css/app.css?v=44b817cdfb',
   './js/singer.js?v=ce28d90410',
   './js/voicepack.js?v=9915a7387b',
-  './js/app.js?v=ef6169b618',
+  './js/app.js?v=de9ea85060',
   // The voice, dictionary and instrument samples, so everything plays offline.
   './data/cmudict.js?v=40c42fbdaa',
   './data/voicepack.js?v=4c0afdebe9',
