@@ -600,20 +600,34 @@
     text-align:center; cursor:pointer; margin-top:-4px;
   }
   .sc-instrument:hover{ border-color:var(--stc, var(--brass)); }
+  /* one instrument only (the piano part): a plain label, no drop-down arrow */
+  .sc-instrument.single{ -webkit-appearance:none; appearance:none; pointer-events:none; cursor:default; }
+  .sc-instrument.single:hover{ border-color:#2b3140; }
   .sc-inst-wrap{ position:relative; width:100%; }
   .sc-inst-wrap.sung .sc-instrument{ padding-left:17px; }
   .sc-inst-ico{
     position:absolute; left:3px; top:50%; transform:translateY(-50%); margin-top:-2px;
     width:14px; height:14px; pointer-events:none; color:var(--stc, var(--brass));
   }
+  .sc-inst-wrap.piano .sc-instrument{ padding-left:17px; }
+  .sc-piano-ico{ position:absolute; left:3px; top:50%; transform:translateY(-50%); margin-top:-2px; width:14px; height:14px; pointer-events:none; }
+  .sc-piano-ico svg{ width:14px; height:14px; display:block; overflow:visible; }
+  .sc-piano-ico .k{ fill:#f4f1e8; stroke:#8a8f99; stroke-width:.5; opacity:1; transform-box:fill-box; }
+  .sc-piano-ico .b{ fill:#0b0d11; stroke:#3a404c; stroke-width:.4; }
+  body.notes-playing .sc-piano-ico .k{ animation:piano-key 1.2s ease-in-out infinite; }
+  body.notes-playing .sc-piano-ico .k2{ animation-delay:.3s; }
+  body.notes-playing .sc-piano-ico .k3{ animation-delay:.6s; }
+  body.notes-playing .sc-piano-ico .k4{ animation-delay:.9s; }
+  @keyframes piano-key{ 0%, 60%, 100%{ opacity:1; transform:translateY(0); } 25%{ opacity:.55; transform:translateY(1.2px); } }
+  @media (prefers-reduced-motion: reduce){ body.notes-playing .sc-piano-ico .k{ animation:none; } }
   .sc-inst-ico[hidden]{ display:none; }
   .sc-inst-ico svg{ width:14px; height:14px; display:block; fill:none; stroke:currentColor; stroke-width:1.5; stroke-linecap:round; stroke-linejoin:round; }
   .sc-inst-ico .m{ fill:currentColor; }
   .sc-inst-ico .w{ opacity:.9; }
-  body.notes-playing .sc-inst-ico .w1{ animation:sing-wave 1s ease-in-out infinite; }
-  body.notes-playing .sc-inst-ico .w2{ animation:sing-wave 1s ease-in-out .25s infinite; }
+  .staff-card.singing-now .sc-inst-ico .w1{ animation:sing-wave 1s ease-in-out infinite; }
+  .staff-card.singing-now .sc-inst-ico .w2{ animation:sing-wave 1s ease-in-out .25s infinite; }
   @keyframes sing-wave{ 0%, 100%{ opacity:.25; } 50%{ opacity:1; } }
-  @media (prefers-reduced-motion: reduce){ body.notes-playing .sc-inst-ico .w{ animation:none; } }
+  @media (prefers-reduced-motion: reduce){ .staff-card.singing-now .sc-inst-ico .w{ animation:none; } }
   .sc-instrument:disabled{ opacity:.5; cursor:wait; }
 
   .sc-toggles{display:flex; gap:4px; justify-content:center;}   /* Solo only: to silence a part, pull its fader down */

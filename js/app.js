@@ -1758,15 +1758,16 @@
     // Rendered Songs folder and downloads it, or says there is none). A
     // piano or other instrument part isn't offered one.
     const sung = track.events.some(e => e.lyric);
+    const pianoOnly = !sung && track.instrument === 'piano';   // the piano part has just the one voice
     const instrumentOptions = Object.keys(INSTRUMENTS)
-      .filter(key => INSTRUMENTS[key].inMenu !== false || key === track.instrument)
+      .filter(key => pianoOnly ? key === 'piano' : (INSTRUMENTS[key].inMenu !== false || key === track.instrument))
       .filter(key => key !== 'recording' || sung || track.recording).map(key => {
       const def = INSTRUMENTS[key];
       if (key === 'recording' && !track.recording){
         return `<option value="${key}"${key === track.instrument ? ' selected' : ''}>${RENDER_CLOUD} Render</option>`;   // "Rendered" only once it's on this device
       }
       const text = def.optionLabel || (key.charAt(0).toUpperCase() + key.slice(1));
-      return `<option value="${key}"${key === track.instrument ? ' selected' : ''}>${def.short ? def.short + ' ' : ''}${escapeHtml(text)}</option>`;
+      return `<option value="${key}"${key === track.instrument ? ' selected' : ''}>${def.short && !pianoOnly ? def.short + ' ' : ''}${escapeHtml(text)}</option>`;
     }).join('');
 
     card.innerHTML = `
@@ -1777,11 +1778,12 @@
         </button>
         <span class="sc-name">${escapeHtml(track.label)}</span>
       </div>
-      <div class="sc-inst-wrap">
+      <div class="sc-inst-wrap${pianoOnly ? ' piano' : ''}">
+        ${pianoOnly ? '<span class="sc-piano-ico" aria-hidden="true"><svg viewBox="0 0 16 16"><rect class="k k1" x="1" y="4" width="3.4" height="9" rx=".8"/><rect class="k k2" x="4.6" y="4" width="3.4" height="9" rx=".8"/><rect class="k k3" x="8.2" y="4" width="3.4" height="9" rx=".8"/><rect class="k k4" x="11.8" y="4" width="3.4" height="9" rx=".8"/><rect class="b" x="3.2" y="3" width="2.4" height="5.6" rx=".6"/><rect class="b" x="6.8" y="3" width="2.4" height="5.6" rx=".6"/><rect class="b" x="10.4" y="3" width="2.4" height="5.6" rx=".6"/></svg></span>' : ''}
         <span class="sc-inst-ico" aria-hidden="true" hidden>
           <svg viewBox="0 0 16 16"><rect class="m" x="3.6" y="1.5" width="4.8" height="8" rx="2.4"/><path class="s" d="M1.6 7.2a4.4 4.4 0 0 0 8.8 0M6 11.6v2.9M3.9 14.5h4.2"/><path class="w w1" d="M11.4 3.6a3.4 3.4 0 0 1 0 4.4"/><path class="w w2" d="M13.3 2.1a5.8 5.8 0 0 1 0 7.4"/></svg>
         </span>
-        <select class="sc-instrument" title="Instrument for this staff">${instrumentOptions}</select>
+        <select class="sc-instrument${pianoOnly ? ' single' : ''}" title="Instrument for this staff">${instrumentOptions}</select>
       </div>
       <div class="sc-toggles">
         <button class="toggle-pill solo-btn" title="Hear only the soloed parts">Solo</button>
@@ -4281,7 +4283,7 @@
   // compares this page's build with version.json fetched live, to tell a
   // fresh page from an old saved copy.
   const APP_VERSION = 'v1.1.0';
-  const APP_BUILD = 108;
+  const APP_BUILD = 109;
   el('app-version').textContent = 'Ark2 Chorus — ' + APP_VERSION + ' · build ' + APP_BUILD;
   el('app-version').insertAdjacentHTML('beforeend',
     '<span class="ver-ok" id="ver-ok" title="Up to date" aria-label="Up to date" hidden>✓</span>');
@@ -5217,6 +5219,20 @@
     const track = card && staffTracks.find(t => t.id === card.dataset.trackId);
     o.textContent = (open ? singerEmoji(track) + ' ' : '') + 'Rendered';
   }
+  // The rendered mic's waves move only while that part has a note sounding
+  // (not through its rests, and not while paused).
+  function micLoop(){
+    const beat = isPlaying ? currentBeat() : -1;
+    staffTracks.forEach(t => {
+      const card = document.querySelector(`.staff-card[data-track-id="${t.id}"]`);
+      if (!card) return;
+      const on = beat >= 0 && t.instrument === 'recording' &&
+        t.events.some(e => beat >= e.time - 1e-6 && beat < e.time + e.dur);
+      if (card.classList.contains('singing-now') !== on) card.classList.toggle('singing-now', on);
+    });
+    requestAnimationFrame(micLoop);
+  }
+  requestAnimationFrame(micLoop);
   function paintInstIcon(track){
     const card = document.querySelector(`.staff-card[data-track-id="${track.id}"]`);
     if (!card) return;
