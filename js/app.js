@@ -4332,7 +4332,7 @@
   // in step with "version", "build" and "patch" in version.json.
   const APP_VERSION = 1;
   const APP_BUILD = 109;
-  const APP_PATCH = 25;
+  const APP_PATCH = 28;
   const versionLabel = (v, b, p) => 'v' + v + '.' + b + '.' + p;
   const APP_LABEL = versionLabel(APP_VERSION, APP_BUILD, APP_PATCH);
   el('app-version').innerHTML = '<span class="av-name">Ark2 Chorus since 2007</span><span class="av-num"></span>';
@@ -5748,6 +5748,27 @@
   }
 
   el('midi-home-btn').addEventListener('click', midiStartSession);
+
+  // "Record a MIDI device" shows only while one is plugged in. Once MIDI is
+  // allowed the devices are watched quietly (no prompt), so plugging one in
+  // brings the button back. With no answer yet on MIDI the button stays, as
+  // it's the only way to ask; with no MIDI at all (or refused) it goes.
+  (async () => {
+    const home = document.querySelector('.midi-home');
+    if (!home) return;
+    const show = (on) => { home.hidden = !on; };
+    if (!navigator.requestMIDIAccess) return show(false);
+    let state = 'prompt';
+    try{ state = (await navigator.permissions.query({ name: 'midi' })).state; }catch(err){ /* can't tell: ask on tap */ }
+    if (state === 'denied') return show(false);
+    if (state !== 'granted') return show(true);
+    try{
+      const access = await navigator.requestMIDIAccess({ sysex: false });
+      const check = () => show([...access.inputs.values()].some(i => i.state !== 'disconnected'));
+      access.addEventListener('statechange', check);
+      check();
+    }catch(err){ show(false); }
+  })();
   el('midi-rec-btn').addEventListener('click', () => {
     if (midiRecording) midiStopRecording(); else midiStartRecording();
   });
