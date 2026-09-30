@@ -4332,7 +4332,7 @@
   // in step with "version", "build" and "patch" in version.json.
   const APP_VERSION = 1;
   const APP_BUILD = 109;
-  const APP_PATCH = 32;
+  const APP_PATCH = 38;
   const versionLabel = (v, b, p) => 'v' + v + '.' + b + '.' + p;
   const APP_LABEL = versionLabel(APP_VERSION, APP_BUILD, APP_PATCH);
   el('app-version').innerHTML = '<span class="av-name">Ark2 Chorus since 2007</span><span class="av-num"></span>';
@@ -7805,7 +7805,7 @@
   const svAudio = new Audio();
   svAudio.crossOrigin = 'anonymous';
   svAudio.preload = 'none';
-  let svAudioKey = '', svAudioUrl = null, svNotesKey = '', svNotesOpened = false, svNotesBusy = false, svAudioBusy = false, svCancel = false, svScrub = null;
+  let svAudioKey = '', svAudioUrl = null, svNotesKey = '', svNotesOpened = false, svNotesBusy = false, svAudioBusy = false, svCancel = false, svScrub = null, svAskParts = false;
   let svAudioList = [], svNotesList = [], svListsP = null, svTicker = null;
   const svStem = (name) => String(name || '').replace(/\.[^.]+$/, '');
   const svNorm = (t) => String(t || '').toLowerCase().replace(/[^a-z0-9]+/g, '');
@@ -7882,6 +7882,8 @@
   function svPaint(){
     el('sv-audio-play').classList.toggle('playing', !svAudio.paused);
     el('sv-notes-play').classList.toggle('playing', !!isPlaying && svNotesOpened);
+    el('sv-clef').classList.toggle('playing', !!isPlaying && svNotesOpened);
+    el('sv-phones').classList.toggle('playing', !svAudio.paused && !svAudioBusy);
     // One at a time: whichever is playing greys out the other.
     const aOn = !svAudio.paused, nOn = (!!isPlaying && svNotesOpened) || svNotesBusy;
     el('sv-audio').disabled = el('sv-audio-play').disabled = nOn;
@@ -7957,6 +7959,99 @@
     if (isPlaying) seekAndPlay(beat); else seekToBeat(beat);
   });
 
+  // The clef beside the notes: while they play (the flying notes) a tap stops
+  // them; stopped or paused, a tap means "pick the parts again" -- either
+  // way the next Play opens the What should play? pop-up.
+  el('sv-clef').addEventListener('click', () => {
+    if (svNotesBusy) return;
+    if (isPlaying && svNotesOpened) stopPlayback();
+    svAskParts = true;
+    svPaint();
+  });
+
+  // The flying notes by the headphones: a tap stops the recording.
+  el('sv-phones').addEventListener('click', () => {
+    if (svAudio.paused) return;
+    svAudio.pause();
+    try{ svAudio.currentTime = 0; }catch(err){ /* not loaded */ }
+    svPaint();
+  });
+
+  // The song / notes pickers open folder-first: the folders are listed, and
+  // tapping one shows just its files (with a way back). The <select> keeps
+  // the choice, so everything else reads it as before.
+  let svMenuEl = null;
+  function svMenuClose(){
+    if (!svMenuEl) return;
+    svMenuEl.remove(); svMenuEl = null;
+    document.removeEventListener('pointerdown', svMenuOutside, true);
+    document.removeEventListener('keydown', svMenuKey, true);
+  }
+  function svMenuOutside(e){ if (svMenuEl && !svMenuEl.contains(e.target)) svMenuClose(); }
+  function svMenuKey(e){ if (e.key === 'Escape'){ e.preventDefault(); e.stopPropagation(); svMenuClose(); } }
+  function svMenuOpen(sel, list){
+    svMenuClose();
+    if (sel.disabled || !list.length) return;
+    const groups = [];
+    list.forEach((it, i) => {
+      let g = groups.find(x => x.name === it.group);
+      if (!g) groups.push(g = { name: it.group, items: [] });
+      g.items.push(i);
+    });
+    const m = svMenuEl = document.createElement('div');
+    m.className = 'sv-menu';
+    const r = sel.getBoundingClientRect();
+    m.style.left = Math.max(8, Math.min(r.left, window.innerWidth - 268)) + 'px';
+    m.style.top = (r.bottom + 6) + 'px';
+    m.style.minWidth = r.width + 'px';
+    const cur = sel.value === '' ? -1 : +sel.value;
+    const row = (cls, html, onClick) => {
+      const b = document.createElement('button');
+      b.type = 'button'; b.className = 'sv-menu-row ' + cls; b.innerHTML = html;
+      b.addEventListener('click', onClick);
+      m.appendChild(b); return b;
+    };
+    const showFolders = () => {
+      m.innerHTML = '';
+      groups.forEach(g => {
+        row('folder' + (g.items.includes(cur) ? ' has' : ''),
+          `<span class="nm">${escapeHtml(g.name)}</span><span class="ct">${g.items.length}</span><span class="go">›</span>`,
+          () => showFiles(g));
+      });
+    };
+    const showFiles = (g) => {
+      m.innerHTML = '';
+      row('back', `<span class="go">‹</span><span class="nm">${escapeHtml(g.name)}</span>`, showFolders);
+      g.items.forEach(i => {
+        row('file' + (i === cur ? ' on' : ''), `<span class="nm">${escapeHtml(svStem(list[i].name))}</span>`, () => {
+          sel.value = String(i);
+          sel.dispatchEvent(new Event('change', { bubbles: true }));
+          svMenuClose();
+        });
+      });
+      m.scrollTop = 0;
+    };
+    if (groups.length === 1) showFiles(groups[0]); else showFolders();
+    document.body.appendChild(m);
+    setTimeout(() => {
+      document.addEventListener('pointerdown', svMenuOutside, true);
+      document.addEventListener('keydown', svMenuKey, true);
+    }, 0);
+  }
+  [['sv-audio', () => svAudioList], ['sv-notes', () => svNotesList]].forEach(([id, listOf]) => {
+    const sel = el(id);
+    const wrap = document.createElement('span');
+    wrap.className = 'sv-selwrap';
+    sel.parentNode.insertBefore(wrap, sel);
+    wrap.appendChild(sel);
+    wrap.addEventListener('click', () => { if (svMenuEl) svMenuClose(); else svMenuOpen(sel, listOf()); });
+    sel.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' || e.key === ' ' || (e.altKey && e.key === 'ArrowDown')){ e.preventDefault(); svMenuOpen(sel, listOf()); }
+    });
+  });
+  // The viewer closing takes an open list with it.
+  el('sv-close').addEventListener('click', svMenuClose);
+
   el('sv-audio-play').addEventListener('click', () => {
     if (!svAudio.paused){ svAudio.pause(); return svPaint(); }
     const it = svAudioList[+el('sv-audio').value];
@@ -7996,7 +8091,23 @@
       cb.type = 'checkbox'; cb.checked = true; cb.dataset.id = t.id;
       li.style.setProperty('--pc', 'var(' + t.colorVar + ')');
       lab.append(cb, document.createTextNode(' ' + t.label));
-      li.appendChild(lab); list.appendChild(li);
+      li.appendChild(lab);
+      // The part's voice, from the same list as its mixer channel. Choosing
+      // one here works the mixer's own dropdown, so a render is fetched etc.
+      const mix = document.querySelector(`.staff-card[data-track-id="${t.id}"] .sc-instrument`);
+      if (mix && mix.options.length > 1){
+        const pick = mix.cloneNode(true);
+        pick.className = 'sv-parts-voice';
+        pick.value = mix.value;
+        pick.title = 'Voice for ' + t.label;
+        pick.addEventListener('change', () => {
+          mix.value = pick.value;
+          mix.dispatchEvent(new Event('change', { bubbles: true }));
+          setTimeout(() => { pick.value = mix.value; }, 0);   // a render that isn't there puts it back
+        });
+        li.appendChild(pick);
+      }
+      list.appendChild(li);
     });
     const sync = () => { go.disabled = !list.querySelector('input:checked'); };
     list.onchange = sync; sync();
@@ -8033,7 +8144,8 @@
     try{ Tone.start(); }catch(err){ /* started again below */ }   // while the tap still counts
     const key = it.driveId || it.key;
     if (svNotesOpened && svNotesKey === key && scoreTabs.some(t => t.id === activeTabId)){
-      if (Tone.Transport.state !== 'paused' && !(await svChooseParts())) return svPaint();
+      if ((svAskParts || Tone.Transport.state !== 'paused') && !(await svChooseParts())) return svPaint();
+      svAskParts = false;
       await startPlayback(); return svPaint();
     }
     svCancel = false;
