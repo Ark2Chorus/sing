@@ -297,12 +297,17 @@
   //            Rendered Songs folder
   //   offline: "Couldn't render alto voice. Check the connection and try again."
   // OK, Esc or a tap outside closes it.
-  function showRenderFail(part, why){
+  function showRenderFail(part, why, text, onClose){
     const box = el('render-fail'), ok = el('render-fail-ok');
     const name = String(part || 'this');
-    if (why === 'missing'){
+    if (why === 'note'){
+      el('render-fail-title').textContent = name;
+      el('render-fail-text').textContent = text || '';
+      el('render-fail-text').hidden = !text;
+    } else if (why === 'missing'){
       el('render-fail-title').textContent = name.charAt(0).toUpperCase() + name.slice(1).toLowerCase() + ' render voice is not available';
-      el('render-fail-text').hidden = true;                 // the title says it all
+      el('render-fail-text').textContent = 'Please select other option from the list.';
+      el('render-fail-text').hidden = false;
     } else {
       // Drive / network trouble (refused, not found, slow, unreachable) gets
       // one plain message, the exact cause staying in the console (`Render:`,
@@ -318,8 +323,16 @@
       }
       el('render-fail-text').hidden = false;
     }
+    // Notes ("Choose a song", "File is not available") sit by the player bar
+    // rather than dimming the whole screen.
+    box.classList.toggle('side', why === 'note');
+    if (why === 'note'){
+      const head = document.querySelector('#sheet-viewer .sv-head');
+      box.style.setProperty('--top', (head ? head.getBoundingClientRect().bottom + 10 : 80) + 'px');
+    }
     const close = () => {
       box.hidden = true;
+      if (onClose) onClose();
       ok.removeEventListener('click', close);
       box.removeEventListener('click', onBackdrop);
       document.removeEventListener('keydown', onKey);
@@ -4319,7 +4332,7 @@
   // in step with "version", "build" and "patch" in version.json.
   const APP_VERSION = 1;
   const APP_BUILD = 109;
-  const APP_PATCH = 3;
+  const APP_PATCH = 25;
   const versionLabel = (v, b, p) => 'v' + v + '.' + b + '.' + p;
   const APP_LABEL = versionLabel(APP_VERSION, APP_BUILD, APP_PATCH);
   el('app-version').innerHTML = '<span class="av-name">Ark2 Chorus since 2007</span><span class="av-num"></span>';
@@ -7543,7 +7556,11 @@
       await svBuild(1);
       el('sv-loading').hidden = true;
     }catch(err){
-      el('sv-loading').textContent = item.driveId && !item.blob ? driveErrorText(err) : "Couldn't open this PDF.";
+      if (item.driveId && !item.blob){
+        console.warn('Shared folder:', err);
+        el('sv-loading').textContent = 'File is not available';
+        showRenderFail('File is not Available', 'note', 'Please check your connection or wait for few moment and come back again', svCancelLoads);
+      } else el('sv-loading').textContent = "Couldn't open this PDF.";
     }
   }
   function sheetClose(){
@@ -7708,11 +7725,12 @@
   const svAudio = new Audio();
   svAudio.crossOrigin = 'anonymous';
   svAudio.preload = 'none';
-  let svAudioKey = '', svAudioUrl = null, svNotesKey = '', svNotesOpened = false, svNotesBusy = false;
+  let svAudioKey = '', svAudioUrl = null, svNotesKey = '', svNotesOpened = false, svNotesBusy = false, svAudioBusy = false, svCancel = false, svScrub = null;
   let svAudioList = [], svNotesList = [], svListsP = null, svTicker = null;
   const svStem = (name) => String(name || '').replace(/\.[^.]+$/, '');
   const svNorm = (t) => String(t || '').toLowerCase().replace(/[^a-z0-9]+/g, '');
   const svStat = (msg) => { el('sv-pstat').textContent = msg || ''; };
+  const svPop = (msg) => showRenderFail(msg, 'note');
   // 0..1: how alike two names are (edit distance, scaled to the longer one).
   function svSimilar(a, b){
     if (a === b) return 1;
@@ -7775,8 +7793,8 @@
     try{
       const lists = await svLoadLists();
       svAudioList = lists.audio; svNotesList = lists.notes;
-      svFill(el('sv-audio'), svAudioList, 'Recording\u2026', title);
-      svFill(el('sv-notes'), svNotesList, 'Notes\u2026', title);
+      svFill(el('sv-audio'), svAudioList, 'Select Song', title);
+      svFill(el('sv-notes'), svNotesList, 'Select Notes', title);
     }catch(err){ svStat('Couldn\u2019t list the files'); }
     clearInterval(svTicker);
     svTicker = setInterval(svPaint, 400);
@@ -7784,20 +7802,85 @@
   function svPaint(){
     el('sv-audio-play').classList.toggle('playing', !svAudio.paused);
     el('sv-notes-play').classList.toggle('playing', !!isPlaying && svNotesOpened);
-    el('sv-notes-play').disabled = svNotesBusy;
+    // One at a time: whichever is playing greys out the other.
+    const aOn = !svAudio.paused, nOn = (!!isPlaying && svNotesOpened) || svNotesBusy;
+    el('sv-audio').disabled = el('sv-audio-play').disabled = nOn;
+    el('sv-notes').disabled = aOn;
+    el('sv-notes-play').disabled = svNotesBusy || aOn;
+    el('sv-notes-play').classList.toggle('loading', svNotesBusy);
+    el('sv-audio-play').classList.toggle('loading', svAudioBusy && !svAudio.paused);
+    // Once it's going, the ring is the progress bar (0..1 round the button).
+    const ringOf = (btn, p, on) => {
+      btn.classList.toggle('prog', on);
+      btn.style.setProperty('--p', on ? Math.min(1, Math.max(0, p)).toFixed(4) : '0');
+    };
+    const dur = svAudio.duration;
+    if (!svScrub) ringOf(el('sv-audio-play'), dur > 0 && isFinite(dur) ? svAudio.currentTime / dur : 0, !!svAudioKey && !svAudioBusy);
+    if (!svScrub) ringOf(el('sv-notes-play'), (parseFloat(el('progress-fill').style.width) || 0) / 100, svNotesOpened && !!svNotesKey && !svNotesBusy);
+    el('sv-audio').parentElement.classList.toggle('dim', nOn);
+    el('sv-notes').parentElement.classList.toggle('dim', aOn);
+  }
+  // OK on the "File is not available" pop-up: stop every spinner.
+  function svCancelLoads(){
+    svCancel = true;
+    svAudio.pause(); svAudioBusy = false;
+    svPaint();
   }
   function svPlayStop(){
     clearInterval(svTicker);
-    svAudio.pause();
+    svAudio.pause(); svAudioBusy = false;
     if (svNotesOpened){ goHome(); svNotesOpened = false; }
     svStat('');
     svPaint();
   }
 
+  // The ring is a progress bar once the music is going: press or drag on it to
+  // jump to that point (clockwise from the top). Pressing the disc still
+  // plays / pauses.
+  function svRingSeek(btn, ratioOf, commit){
+    let swallow = false;
+    btn.addEventListener('click', (e) => { if (swallow){ swallow = false; e.stopImmediatePropagation(); e.preventDefault(); } }, true);
+    const at = (e) => {
+      const r = btn.getBoundingClientRect(), x = e.clientX - (r.left + r.width / 2), y = e.clientY - (r.top + r.height / 2);
+      return { d: Math.hypot(x, y), r: r.width / 2, a: (Math.atan2(x, -y) + 2 * Math.PI) % (2 * Math.PI) / (2 * Math.PI) };
+    };
+    btn.addEventListener('pointerdown', (e) => {
+      if (!btn.classList.contains('prog') || btn.disabled) return;
+      const p = at(e);
+      if (p.d < p.r - 6) return;                          // the disc, not the ring
+      svScrub = btn; swallow = true;
+      btn.classList.add('scrub');
+      btn.setPointerCapture(e.pointerId);
+      btn.style.setProperty('--p', p.a.toFixed(4));
+      const move = (ev) => btn.style.setProperty('--p', at(ev).a.toFixed(4));
+      const up = (ev) => {
+        btn.removeEventListener('pointermove', move);
+        btn.removeEventListener('pointerup', up);
+        btn.removeEventListener('pointercancel', up);
+        btn.classList.remove('scrub');
+        svScrub = null;
+        commit(at(ev).a);
+        svPaint();
+      };
+      btn.addEventListener('pointermove', move);
+      btn.addEventListener('pointerup', up);
+      btn.addEventListener('pointercancel', up);
+      e.preventDefault();
+    });
+  }
+  svRingSeek(el('sv-audio-play'), null, (ratio) => {
+    if (svAudio.duration > 0 && isFinite(svAudio.duration)) svAudio.currentTime = ratio * svAudio.duration;
+  });
+  svRingSeek(el('sv-notes-play'), null, (ratio) => {
+    if (!totalDuration) return;
+    const beat = beatFromSeconds(ratio * totalDuration, parseInt(el('tempo-slider').value, 10));
+    if (isPlaying) seekAndPlay(beat); else seekToBeat(beat);
+  });
+
   el('sv-audio-play').addEventListener('click', () => {
     if (!svAudio.paused){ svAudio.pause(); return svPaint(); }
     const it = svAudioList[+el('sv-audio').value];
-    if (!el('sv-audio').value || !it) return svStat('Pick a recording first');
+    if (!el('sv-audio').value || !it) return svPop('Choose a song from the list');
     const key = it.driveId || it.key;
     if (svAudioKey !== key){
       if (svAudioUrl){ URL.revokeObjectURL(svAudioUrl); svAudioUrl = null; }
@@ -7805,21 +7888,76 @@
       svAudioKey = key;
     }
     svStat('');
-    svAudio.play().then(svPaint, () => svStat('Couldn\u2019t play that recording'));
+    svAudioBusy = true; svPaint();     // spinner until it starts
+    svAudio.play().then(() => { svAudioBusy = false; svPaint(); }, (err) => {
+      svAudioBusy = false; svPaint();
+      // Pausing (or picking another song) while it was still loading cancels
+      // the request -- that's the listener's doing, not a failure.
+      if (err && err.name === 'AbortError') return svStat('');
+      console.warn('Sheet recording:', err);
+      svStat('Couldn\u2019t play that recording');
+    });
   });
   el('sv-audio').addEventListener('change', () => { svAudio.pause(); svAudioKey = ''; svStat(''); svPaint(); });
-  svAudio.addEventListener('ended', svPaint);
+  // Clear the spinner the moment sound starts, not on the next tick.
+  svAudio.addEventListener('playing', () => { svAudioBusy = false; svPaint(); });
+  svAudio.addEventListener('ended', () => { svAudio.currentTime = 0; svPaint(); });
+
+  // Before the notes start: a pop-up listing every voice and the piano, all
+  // ticked. Whatever is ticked plays (the others are left out via Solo).
+  // -> false when cancelled.
+  function svChooseParts(){
+    const box = el('sv-parts'), list = el('sv-parts-list'), go = el('sv-parts-go'), no = el('sv-parts-cancel');
+    list.innerHTML = '';
+    staffTracks.forEach(t => {
+      const li = document.createElement('li');
+      const lab = document.createElement('label');
+      const cb = document.createElement('input');
+      cb.type = 'checkbox'; cb.checked = true; cb.dataset.id = t.id;
+      li.style.setProperty('--pc', 'var(' + t.colorVar + ')');
+      lab.append(cb, document.createTextNode(' ' + t.label));
+      li.appendChild(lab); list.appendChild(li);
+    });
+    const sync = () => { go.disabled = !list.querySelector('input:checked'); };
+    list.onchange = sync; sync();
+    return new Promise(resolve => {
+      const done = (ok) => {
+        if (ok){
+          const picked = new Set([...list.querySelectorAll('input:checked')].map(i => i.dataset.id));
+          const all = picked.size === staffTracks.length;
+          staffTracks.forEach(t => { t.soloed = !all && picked.has(String(t.id)); });
+          applyMixState();
+        }
+        box.hidden = true;
+        go.onclick = no.onclick = null;
+        document.removeEventListener('keydown', onKey, true);
+        resolve(ok);
+      };
+      const onKey = (e) => { if (e.key === 'Escape'){ e.preventDefault(); e.stopPropagation(); done(false); } };
+      go.onclick = () => done(true);
+      no.onclick = () => done(false);
+      document.addEventListener('keydown', onKey, true);
+      // Sits in the empty space beside the sheet, just under the player bar.
+      const head = document.querySelector('#sheet-viewer .sv-head');
+      box.style.setProperty('--top', (head ? head.getBoundingClientRect().bottom + 10 : 80) + 'px');
+      box.hidden = false;
+      go.focus();
+    });
+  }
 
   el('sv-notes-play').addEventListener('click', async () => {
     if (svNotesBusy) return;
     if (isPlaying && svNotesOpened){ pausePlayback(); return svPaint(); }
     const it = svNotesList[+el('sv-notes').value];
-    if (!el('sv-notes').value || !it) return svStat('Pick a score first');
+    if (!el('sv-notes').value || !it) return svPop('Choose a song from the list');
     try{ Tone.start(); }catch(err){ /* started again below */ }   // while the tap still counts
     const key = it.driveId || it.key;
-    if (svNotesOpened && svNotesKey === key && scoreTabs.some(t => t.id === activeTabId)){ await startPlayback(); return svPaint(); }
+    if (svNotesOpened && svNotesKey === key && scoreTabs.some(t => t.id === activeTabId)){
+      if (Tone.Transport.state !== 'paused' && !(await svChooseParts())) return svPaint();
+      await startPlayback(); return svPaint();
+    }
+    svCancel = false;
     svNotesBusy = true; svPaint();
-    svStat('Loading notes\u2026');
     try{
       // Open it the way the Note Player does, from its folder.
       if (libSource !== it.source){
@@ -7836,6 +7974,7 @@
       // Wait for it to open (or for the tab it's already in to come forward).
       for (;;){
         await new Promise(r => setTimeout(r, 120));
+        if (svCancel) throw new Error('cancelled');
         const t = scoreTabs.find(x => x.id === activeTabId);
         const idle = el('loading-overlay').style.display === 'none';
         if (t && t.name === want && idle && (loadGeneration !== gen0 || Date.now() - t0 > 800)) break;
@@ -7844,8 +7983,10 @@
       svNotesOpened = true;
       svNotesKey = key;
       svStat('');
+      if (!(await svChooseParts())) return;
       await startPlayback();
     }catch(err){
+      if (err && err.message === 'cancelled') return;
       svStat(err && err.message === 'timeout' ? 'The notes took too long to load' : 'Couldn\u2019t open that score');
     }finally{
       svNotesBusy = false; svPaint();

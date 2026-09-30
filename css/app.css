@@ -920,6 +920,17 @@
   }
   .render-parts-del[hidden]{ display:none; }
   .render-parts-del input{ width:16px; height:16px; accent-color:#f87171; cursor:pointer; }
+  /* Beside the sheet, not over it: no backdrop, only the card takes taps. */
+  #sv-parts, #render-fail.side{ align-items:flex-start; justify-content:flex-end; padding:var(--top,80px) 14px 14px; background:none; backdrop-filter:none; -webkit-backdrop-filter:none; pointer-events:none; }
+  #render-fail.side{ align-items:center; justify-content:center; padding:20px; }
+  #sv-parts .dl-warn-card, #render-fail.side .dl-warn-card{ pointer-events:auto; max-width:270px; padding:16px 14px 14px; }
+  #sv-parts .dl-warn-ico{ width:36px; height:36px; margin-bottom:6px; }
+  #sv-parts .dl-warn-card h2{ font-size:17px; margin-bottom:6px; }
+  .sv-parts-list{ max-height:50vh; overflow:auto; }
+  .sv-parts-list li{ padding:0; border-left:4px solid var(--pc, #2b3140); }
+  .sv-parts-list label{ display:flex; align-items:center; gap:10px; padding:9px 10px; cursor:pointer; width:100%; color:var(--pc, #c9cdd4); font-weight:600; }
+  .sv-parts-list input{ width:18px; height:18px; accent-color:var(--pc, var(--brass)); cursor:pointer; }
+  .dl-warn-ok:disabled{ opacity:.45; cursor:default; }
   .dl-warn-ok{ background:var(--brass); border:1px solid var(--brass); color:#1a1406; }
 
   .sheet-viewer{
@@ -948,19 +959,61 @@
     background:#161a21 url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 10 6'%3E%3Cpath d='M1 1l4 4 4-4' fill='none' stroke='%23c9a15a' stroke-width='1.5'/%3E%3C/svg%3E") right 8px center / 9px no-repeat;
     -webkit-appearance:none; appearance:none; text-overflow:ellipsis; cursor:pointer;
   }
+  /* Neon play button: a navy disc, a glowing green icon and an open ring
+     that turns while it plays or loads. */
   .sv-pbtn{
-    flex:0 0 auto; width:30px; height:30px; border-radius:50%; cursor:pointer;
-    border:1px solid #aaadb2; background:#aaadb2; color:#181c22;
-    display:flex; align-items:center; justify-content:center; transition:background .2s ease, border-color .2s ease;
+    --glow:#2bff4a;
+    position:relative; flex:0 0 auto; width:44px; height:44px; border-radius:50%; cursor:pointer;
+    border:0; padding:0; background:none; color:var(--glow); touch-action:none;
+    display:flex; align-items:center; justify-content:center;
   }
-  .sv-pbtn svg{ width:15px; height:15px; fill:currentColor; }
+  .sv-pbtn::after{
+    content:''; position:absolute; inset:5px; border-radius:50%; pointer-events:none;
+    background:radial-gradient(circle at 50% 35%, #163a6b 0%, #0b1a35 70%);
+    box-shadow:inset 0 0 0 1px rgba(80,140,255,.28);
+  }
+  .sv-pbtn::before{
+    content:''; position:absolute; inset:0; border-radius:50%; pointer-events:none;
+    background:conic-gradient(from 210deg, var(--glow) 0 285deg, rgba(43,255,74,.18) 285deg 335deg, transparent 335deg);
+    -webkit-mask:radial-gradient(farthest-side, transparent calc(100% - 4px), #000 calc(100% - 3.5px));
+            mask:radial-gradient(farthest-side, transparent calc(100% - 4px), #000 calc(100% - 3.5px));
+    filter:drop-shadow(0 0 3px var(--glow));
+  }
+  /* The ring only shows while a file loads or the music plays. */
+  .sv-pbtn::before{ opacity:0; transition:opacity .2s ease; }
+  .sv-pbtn.loading::before, .sv-pbtn.playing.prog::before, .sv-pbtn.scrub::before{ opacity:1; }
+  /* A glowing dot riding the head of the progress arc. */
+  .sv-knob{ position:absolute; inset:0; z-index:2; pointer-events:none; opacity:0; transform:rotate(calc(var(--p) * 360deg)); transition:--p .4s linear, opacity .2s ease; }
+  .sv-pbtn.scrub .sv-knob{ transition:opacity .2s ease; }
+  .sv-knob::after{
+    content:''; position:absolute; top:-2px; left:50%; width:8px; height:8px; margin-left:-4px; border-radius:50%;
+    background:#eafff0; box-shadow:0 0 4px 1px var(--glow), 0 0 10px 2px var(--glow);
+    animation:svknob 1.2s ease-in-out infinite;
+  }
+  .sv-pbtn.playing.prog .sv-knob, .sv-pbtn.scrub .sv-knob{ opacity:1; }
+  @keyframes svknob{ 0%,100%{ transform:scale(.8); } 50%{ transform:scale(1.35); } }
+  @media (prefers-reduced-motion:reduce){ .sv-knob::after{ animation:none; } }
+  .sv-pbtn svg{ position:relative; z-index:1; width:22.4px; height:22.4px; fill:currentColor; filter:drop-shadow(0 0 4px var(--glow)); }
   .sv-pbtn .i-pause{ display:none; }
-  .sv-pbtn.playing{ background:#86efac; border-color:#86efac; color:#0f2a18; }
+  .sv-pbtn:hover:not(:disabled)::after{ box-shadow:inset 0 0 0 1px rgba(80,140,255,.28), 0 0 12px rgba(43,255,74,.35); }
+  .sv-pbtn.prog{ cursor:pointer; }
+  .sv-pbtn.scrub::before{ transition:none !important; }
+  @property --p{ syntax:'<number>'; inherits:true; initial-value:0; }
+  .sv-pbtn.prog::before{
+    background:conic-gradient(from 0deg, var(--glow) calc(var(--p) * 360deg), rgba(43,255,74,.2) 0);
+    transition:--p .4s linear;
+  }
+  .sv-pbtn.loading::before{ animation:svspin .7s linear infinite; }
+  .sv-pbtn.loading svg{ opacity:.35; }
+  @keyframes svspin{ to{ transform:rotate(360deg); } }
+  @media (prefers-reduced-motion:reduce){ .sv-pbtn.loading::before{ animation:none; } }
   .sv-pbtn.playing .i-play{ display:none; }
   .sv-pbtn.playing .i-pause{ display:block; }
   .sv-pbtn:disabled{ opacity:.45; cursor:default; }
+  .sv-pbtn.loading:disabled{ opacity:1; }
   .sv-pstat{ flex:0 0 auto; font-family:var(--font-mono); font-size:11px; color:#9aa0aa; white-space:nowrap; }
   .sv-pstat:empty{ display:none; }
+  .sv-pick.dim{ opacity:.4; filter:grayscale(1); }
   @media (max-width:760px){
     .sv-head{ flex-wrap:wrap; row-gap:8px; }
     .sheet-viewer .sv-title{ flex:1 1 auto; }

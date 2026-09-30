@@ -614,7 +614,11 @@ class FormantSingerVoice {
       this._setFormants(vt[0], bw, vowelStart, onsets.length ? 0.035 : 0.02);
       if (vt.length > 1){
         // diphthong: hold the nucleus, glide to the offglide late
-        this._setFormants(vt[1], bw, vowelStart + dur * 0.62, dur * 0.3);
+        // (linearRamp starts at the previous event, so pin the nucleus first or
+        // the glide would begin at the note onset and smear the vowel)
+        const holdT = vowelStart + dur * 0.5;
+        this._setFormants(vt[0], bw, holdT - 0.001, 0);
+        this._setFormants(vt[1], bw, holdT, Math.max(0.05, dur * 0.35));
       }
     } else {
       const c = SINGER_DATA.CONSONANTS[nucleus];
@@ -682,8 +686,15 @@ class FormantSingerVoice {
       amp.gain.linearRampToValueAtTime(peak, vowelStart + (legato ? 0.015 : 0.045));
     }
     const end = vowelStart + dur;
-    amp.gain.setValueAtTime(peak, Math.max(vowelStart + 0.05, end - 0.05));
-    amp.gain.linearRampToValueAtTime(0.0001, end + 0.06);
+    const c0 = codas.length ? SINGER_DATA.CONSONANTS[codas[0]] : null;
+    if (c0 && !c0.voiced && (c0.cls === 'stop' || c0.cls === 'affricate' || c0.cls === 'fricative')){
+      // voiceless coda (the t of "let"): the folds stop, only noise remains
+      amp.gain.setValueAtTime(peak, Math.max(vowelStart + 0.05, vowelEnd - 0.005));
+      amp.gain.linearRampToValueAtTime(0.0001, Math.max(vowelStart + 0.06, vowelEnd + 0.02));
+    } else {
+      amp.gain.setValueAtTime(peak, Math.max(vowelStart + 0.05, end - 0.05));
+      amp.gain.linearRampToValueAtTime(0.0001, end + 0.06);
+    }
 
     // breath mixed in at the glottis
     const br = ctx.createBufferSource();

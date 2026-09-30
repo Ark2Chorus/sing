@@ -20,10 +20,10 @@
 <script src="vendor/tone.min.js?v=9cf37a5a1b"></script>
 <script src="vendor/jszip.min.js?v=ddd54a3a4a"></script>
 <script src="data/cmudict.js?v=40c42fbdaa"></script>
-<script src="js/singer.js?v=ce28d90410"></script>
+<script src="js/singer.js?v=af5f1a7eb3"></script>
 <script src="data/voicepack.js?v=4c0afdebe9"></script>
 <script src="js/voicepack.js?v=9915a7387b"></script>
-<link rel="stylesheet" href="css/app.css?v=894a5cfe8a">
+<link rel="stylesheet" href="css/app.css?v=3b3ff90315">
 </head>
 <body>
 <input type="file" id="file-input" accept=".xml,.musicxml,.mxl,.mp3,.m4a,.wav,.ogg,.aac,.flac,.webm" multiple style="display:none;">
@@ -52,13 +52,13 @@
     <div class="sv-play" id="sv-play">
       <div class="sv-pick">
         <span class="sv-pico" aria-hidden="true">🎧</span>
-        <select id="sv-audio" aria-label="Recording to play with this sheet"></select>
-        <button class="sv-pbtn" id="sv-audio-play" type="button" title="Play the recording"><svg class="i-play" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5.5v13l11-6.5z"/></svg><svg class="i-pause" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 5h4v14H7zM13 5h4v14h-4z"/></svg></button>
+        <select id="sv-audio" aria-label="Song to play with this sheet"></select>
+        <button class="sv-pbtn" id="sv-audio-play" type="button" title="Play the recording"><svg class="i-play" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5.5v13l11-6.5z"/></svg><svg class="i-pause" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 5h4v14H7zM13 5h4v14h-4z"/></svg><i class="sv-knob" aria-hidden="true"></i></button>
       </div>
       <div class="sv-pick">
         <span class="sv-pico" aria-hidden="true">🎼</span>
         <select id="sv-notes" aria-label="Score to play with this sheet"></select>
-        <button class="sv-pbtn" id="sv-notes-play" type="button" title="Play the notes"><svg class="i-play" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5.5v13l11-6.5z"/></svg><svg class="i-pause" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 5h4v14H7zM13 5h4v14h-4z"/></svg></button>
+        <button class="sv-pbtn" id="sv-notes-play" type="button" title="Play the notes"><svg class="i-play" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5.5v13l11-6.5z"/></svg><svg class="i-pause" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 5h4v14H7zM13 5h4v14h-4z"/></svg><i class="sv-knob" aria-hidden="true"></i></button>
       </div>
       <span class="sv-pstat" id="sv-pstat" aria-live="polite"></span>
     </div>
@@ -127,6 +127,18 @@
     <p class="dl-warn-text" id="render-fail-text">Check the connection and try again.</p>
     <div class="dl-warn-btns" style="margin-top:14px">
       <button class="dl-warn-ok" id="render-fail-ok" type="button">OK</button>
+    </div>
+  </div>
+</div>
+
+<div class="dl-warn" id="sv-parts" role="dialog" aria-modal="true" aria-labelledby="sv-parts-title" hidden>
+  <div class="dl-warn-card">
+    <div class="dl-warn-ico" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M9 18V6l10-2v12M9 18a2.5 2.5 0 1 1-5 0 2.5 2.5 0 0 1 5 0zM19 16a2.5 2.5 0 1 1-5 0 2.5 2.5 0 0 1 5 0z"/></svg></div>
+    <h2 id="sv-parts-title">What should play?</h2>
+    <ul class="render-parts-list sv-parts-list" id="sv-parts-list"></ul>
+    <div class="dl-warn-btns">
+      <button class="dl-warn-cancel" id="sv-parts-cancel" type="button">Cancel</button>
+      <button class="dl-warn-ok" id="sv-parts-go" type="button">Play</button>
     </div>
   </div>
 </div>
@@ -526,7 +538,7 @@
 <script src="vendor/lame.min.js?v=c1991df998"></script>
 <script src="data/piano-samples.js?v=4974cea038"></script>
 <script src="data/choir-samples.js?v=fc02f79d45"></script>
-<script src="js/app.js?v=cfae835985"></script>
+<script src="js/app.js?v=11642cf782"></script>
 <script>
 if ('serviceWorker' in navigator) {
   window.addEventListener("load", () => {

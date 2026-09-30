@@ -16,10 +16,10 @@ const APP_SHELL = [
   './icons/singer-male.png',
   './icons/singer-female.png',
   './icons/logo.jpg?v=ddaebaf042',
-  './css/app.css?v=894a5cfe8a',
-  './js/singer.js?v=ce28d90410',
+  './css/app.css?v=3b3ff90315',
+  './js/singer.js?v=af5f1a7eb3',
   './js/voicepack.js?v=9915a7387b',
-  './js/app.js?v=cfae835985',
+  './js/app.js?v=11642cf782',
   // The voice, dictionary and instrument samples, so everything plays offline.
   './data/cmudict.js?v=40c42fbdaa',
   './data/voicepack.js?v=4c0afdebe9',
