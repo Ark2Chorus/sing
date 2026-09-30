@@ -434,7 +434,10 @@
   .zoom-val{
     font-family:var(--font-mono); font-size:11.5px; color:#cfd3da; min-width:34px;
     text-align:center; font-variant-numeric:tabular-nums;
+    cursor:pointer; border-radius:5px; padding:3px 2px; -webkit-tap-highlight-color:transparent;
   }
+  .zoom-val:hover{ color:var(--brass-soft); }   /* tap: back to the default size */
+  .zoom-val:active{ background:rgba(255,255,255,.08); }
   .icon-btn{
     width:30px; height:30px; border-radius:7px; background:#232a36; border:1px solid #333c4b;
     color:#cfd3da; display:flex; align-items:center; justify-content:center; font-size:15px; font-weight:700;
@@ -531,10 +534,11 @@
      the page itself doesn't zoom there, only the score. */
   /* A lock beside the percentage: locked (default), pinching does nothing. */
   .zoom-lock{ display:none; }
-  .zoom-lock svg{ width:14px; height:14px; fill:none; stroke:currentColor; stroke-width:1.6; stroke-linecap:round; stroke-linejoin:round; }
-  .zoom-lock .shackle{ transition:transform .15s ease; transform-origin:10.5px 7px; }
+  .zoom-lock svg{ width:16px; height:16px; fill:none; stroke:currentColor; stroke-width:2; stroke-linecap:round; stroke-linejoin:round; }
+  .zoom-lock .zl-open{ display:none; }
   .zoom-lock[aria-pressed="false"]{ color:#4ade80; }
-  .zoom-lock[aria-pressed="false"] .shackle{ transform:translateY(-1.5px) rotate(28deg); }
+  .zoom-lock[aria-pressed="false"] .zl-locked{ display:none; }
+  .zoom-lock[aria-pressed="false"] .zl-open{ display:block; }
   @media (pointer: coarse){
     #zoom-in, #zoom-out{ display:none !important; }
     .zoom-lock{ display:inline-flex; align-items:center; justify-content:center; }

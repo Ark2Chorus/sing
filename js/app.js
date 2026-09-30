@@ -4332,7 +4332,7 @@
   // in step with "version", "build" and "patch" in version.json.
   const APP_VERSION = 1;
   const APP_BUILD = 109;
-  const APP_PATCH = 30;
+  const APP_PATCH = 32;
   const versionLabel = (v, b, p) => 'v' + v + '.' + b + '.' + p;
   const APP_LABEL = versionLabel(APP_VERSION, APP_BUILD, APP_PATCH);
   el('app-version').innerHTML = '<span class="av-name">Ark2 Chorus since 2007</span><span class="av-num"></span>';
@@ -7041,6 +7041,16 @@
   }
   el('zoom-in').addEventListener('click', () => setScoreZoom(zoom + 0.1));
   el('zoom-out').addEventListener('click', () => setScoreZoom(zoom - 0.1));
+  // Tapping the percentage puts the score back to its default size.
+  const ZOOM_DEFAULT = zoom;
+  const zoomValEl = el('zoom-val');
+  zoomValEl.setAttribute('role', 'button');
+  zoomValEl.tabIndex = 0;
+  zoomValEl.title = 'Back to ' + Math.round(ZOOM_DEFAULT * 100) + '%';
+  zoomValEl.addEventListener('click', () => { if (zoom !== ZOOM_DEFAULT) setScoreZoom(ZOOM_DEFAULT); });
+  zoomValEl.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter' || e.key === ' '){ e.preventDefault(); zoomValEl.click(); }
+  });
   // Phones and tablets: pinch the score to zoom (the - / + buttons are
   // hidden there). While the fingers move the drawn score is only stretched;
   // when they lift it's redrawn sharply at the new size.
