@@ -661,20 +661,25 @@
   @media (prefers-reduced-motion: reduce){ .sing-ico i{ animation:none; } }
   /* Lead voice: a woman / man singer (icons/singer-*.png as a mask, so it takes
      the voice's colour) with notes drifting up while the music plays. */
-  .toggle-pill.solo-btn.lead{ padding:0 8px; }
+  .toggle-pill.solo-btn.lead, .toggle-pill.solo-btn.singing.lead{ padding:0 8px; background:none; border-color:transparent; box-shadow:none; }
   .lead-ico{ position:relative; display:inline-block; width:40px; height:20px; }
-  .lead-fig{ position:absolute; left:0; bottom:0; width:19px; height:20px; background:currentColor;
+  .lead-fig{ position:absolute; left:0; bottom:0; width:19px; height:20px; background:#f4f1e8;
     -webkit-mask:var(--fig) center/contain no-repeat; mask:var(--fig) center/contain no-repeat; }
   .lead-fig.m{ --fig:url(../icons/singer-male.png); }
   .lead-fig.f{ --fig:url(../icons/singer-female.png); }
-  .lead-ico b{ position:absolute; left:23px; bottom:6px; font-size:13px; line-height:1; font-weight:400; opacity:.7;
-    animation:lead-note 1.8s ease-out infinite; animation-play-state:paused; }
+  .lead-ico b{ position:absolute; left:23px; bottom:6px; font-size:13px; line-height:1; font-weight:400; opacity:1;
+    opacity:0; }
+  .lead-ico b:nth-of-type(1){ color:#ff6b8b; }
+  .lead-ico b:nth-of-type(2){ color:#ffd166; }
+  .lead-ico b:nth-of-type(3){ color:#4dd0e1; }
   .lead-ico b:nth-of-type(2){ animation-delay:-.6s; left:30px; }
   .lead-ico b:nth-of-type(3){ animation-delay:-1.2s; left:19px; }
-  body.notes-playing .lead-ico b{ animation-play-state:running; }
+  .staff-card.singing-now .lead-ico b{ animation:lead-note 1.8s ease-out infinite; }
+  .staff-card.singing-now .lead-ico b:nth-of-type(2){ animation-delay:-.6s; }
+  .staff-card.singing-now .lead-ico b:nth-of-type(3){ animation-delay:-1.2s; }
   @keyframes lead-note{ 0%{ transform:translate(0,4px) rotate(-8deg); opacity:0; } 25%{ opacity:1; }
     100%{ transform:translate(5px,-14px) rotate(12deg); opacity:0; } }
-  @media (prefers-reduced-motion: reduce){ .lead-ico b{ animation:none; } }
+  @media (prefers-reduced-motion: reduce){ .staff-card.singing-now .lead-ico b{ animation:none; opacity:1; } }
   .toggle-pill.on-solo{
     background:rgba(58,138,74,0.35); border-color:rgba(92,194,108,0.75); color:#daffe0;
     box-shadow:inset 0 1px 3px rgba(0,0,0,.35), 0 0 7px -1px rgba(160,160,160,.6);
@@ -1183,6 +1188,8 @@
     font-family:var(--font-mono); font-size:10.5px; color:#4b515e;
     text-align:center; margin:22px 0 4px; letter-spacing:.03em;
   }
+  .app-version .av-name, .app-version .av-num{ display:block; }
+  .app-version .av-num{ margin-top:3px; }
   /* Whether this page is the latest build or an older saved (cached) copy. */
   #dropzone .app-update{ /* #dropzone p would otherwise make it 14px */
     font-family:var(--font-mono); font-size:10.5px; text-align:center;

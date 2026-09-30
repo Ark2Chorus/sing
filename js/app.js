@@ -243,6 +243,25 @@
   // uploaded while Ark2 is open show up; a listing under a minute old is
   // reused. Offline, nothing is found.
   let renderedListP = null, renderedListAt = 0;
+  // Why the last render lookup / download failed, in words the pop-up can show
+  // ("Couldn't render soprano voice" + this). The console keeps the raw error
+  // as `Render:`. step: 'list' (the folder), 'download' (the file), 'decode'.
+  let renderProblem = null;
+  function noteRenderProblem(step, err){
+    console.warn('Render:', step, err);
+    const st = err && err.status, msg = (err && err.message) || String(err || '');
+    let text;
+    if (!navigator.onLine) text = "This device is offline.";
+    else if (step === 'decode') text = "The render downloaded, but this device couldn't read the audio file (" + msg + "). It may need to be rendered again.";
+    else if (step === 'config') text = "Couldn't read config.ark2, which lists the Rendered Songs folders (" + (msg || 'not reachable') + ").";
+    else if (step === 'timeout') text = "Google Drive didn't answer within 15 seconds. The internet is up, so Drive itself is slow or blocked; try again in a minute.";
+    else if (st === 404) text = "The " + (step === 'list' ? 'Rendered Songs folder' : 'render file') + " wasn't found on Google Drive (HTTP 404). Check it is still shared as Anyone with the link.";
+    else if (st === 429 || (st === 403 && step === 'download')) text = "Google Drive refused the download (HTTP " + st + "). Drive limits repeated downloads: wait a few minutes and try again.";
+    else if (st === 400 || st === 403) text = "Google Drive refused the request (HTTP " + st + "). Check the API key in config.ark2.";
+    else if (st) text = "Google Drive answered with an error (HTTP " + st + ") while " + (step === 'list' ? 'listing the folder' : 'downloading the render') + ".";
+    else text = "Couldn't reach Google Drive (" + msg + "). The internet is up, so something is blocking Drive requests: a VPN, firewall, or ad-blocker.";
+    renderProblem = { step, text };
+  }
   // -> the audio files in all Rendered Songs folders, or null when a folder
   // couldn't be read (offline, not shared). `fresh` lists again right now.
   function renderedList(fresh){
@@ -250,10 +269,10 @@
       renderedListAt = Date.now();
       renderedListP = (async () => {
         await getCloudConfig();
-        if (!cloudCfg.reachable) return null;
+        if (!cloudCfg.reachable){ noteRenderProblem('config', null); return null; }
         const out = [];
         for (const f of cloudCfg.recordings || []){
-          try{ out.push(...await driveList(f.id, AUDIO_EXT)); }catch(err){ return null; }
+          try{ out.push(...await driveList(f.id, AUDIO_EXT)); }catch(err){ noteRenderProblem('list', err); return null; }
         }
         return out;
       })();
@@ -267,7 +286,7 @@
   async function renderedFor(scoreName, fresh){
     if (!navigator.onLine) return null;
     const base = String(scoreName || '').replace(/\.(musicxml|xml|mxl)$/i, '').toLowerCase().trim() + ' - ';
-    const list = await Promise.race([renderedList(fresh), new Promise(res => setTimeout(() => res(null), 15000))]);
+    const list = await Promise.race([renderedList(fresh), new Promise(res => setTimeout(() => { noteRenderProblem('timeout', null); res(null); }, 15000))]);
     if (!list) return null;
     return list.filter(a => a.name.toLowerCase().startsWith(base))
       .map(a => ({ label: a.name.slice(base.length).replace(/\.[^.]+$/, ''), item: a }));
@@ -285,8 +304,18 @@
       el('render-fail-title').textContent = name.charAt(0).toUpperCase() + name.slice(1).toLowerCase() + ' render voice is not available';
       el('render-fail-text').hidden = true;                 // the title says it all
     } else {
-      el('render-fail-title').textContent = "Couldn't render " + name.toLowerCase() + ' voice';
-      el('render-fail-text').textContent = 'Check the connection and try again.';
+      // Drive / network trouble (refused, not found, slow, unreachable) gets
+      // one plain message, the exact cause staying in the console (`Render:`,
+      // see noteRenderProblem). Offline, an unreadable file and a missing
+      // config.ark2 keep their own wording.
+      const own = renderProblem && (renderProblem.step === 'decode' || renderProblem.step === 'config' || !navigator.onLine);
+      if (own){
+        el('render-fail-title').textContent = "Couldn't render " + name.toLowerCase() + ' voice';
+        el('render-fail-text').textContent = renderProblem.text;
+      } else {
+        el('render-fail-title').textContent = 'Render ' + name.charAt(0).toUpperCase() + name.slice(1).toLowerCase() + ' not available';
+        el('render-fail-text').textContent = 'Your internet might be slow or the server is not responding to your request. Please select any other voice from the list.';
+      }
       el('render-fail-text').hidden = false;
     }
     const close = () => {
@@ -311,6 +340,7 @@
   async function downloadRender(track){
     const tab = scoreTabs.find(t => t.id === activeTabId);
     if (!tab) return 'offline';
+    renderProblem = null;
     const opt = document.querySelector(`.staff-card[data-track-id="${track.id}"] .sc-instrument option[value="recording"]`);
     const reset = () => { if (opt) opt.textContent = RENDER_CLOUD + ' Render'; };   // not downloaded: still "Render"
     if (opt) opt.textContent = RENDER_CLOUD + ' Looking\u2026';
@@ -324,7 +354,7 @@
     const got = await fetchRecordings([track.renderFile]);
     const buffers = got.length ? await decodeRecordings(got) : new Map();
     const buf = buffers.get(recKey(track.label));
-    if (!buf){ reset(); return 'offline'; }
+    if (!buf){ reset(); if (!renderProblem) noteRenderProblem('download', new Error('no file came back')); return 'offline'; }
     track.recording = buf;
     track.renderFile = null;
     tab.recordings = (tab.recordings || []).filter(r => recKey(r.label) !== recKey(got[0].label)).concat(got);
@@ -360,7 +390,7 @@
         const tb = new Tone.ToneAudioBuffer(buf);
         tb._blob = r.blob;                                   // RecordingVoice plays the file itself
         out.set(recKey(r.label), tb);
-      }catch(err){ /* not audio we can read: that part keeps its instrument */ }
+      }catch(err){ noteRenderProblem('decode', err); /* not audio we can read: that part keeps its instrument */ }
     }
     return out;
   }
@@ -2164,7 +2194,8 @@
         // replace it later (see the Rendered Songs check in buildStaffTracks)
         if (res.ok) out.push({ label: r.label, blob: await res.blob(),
                                driveId: r.item.driveId, modifiedTime: r.item.modifiedTime || '' });
-      }catch(err){ /* skip it */ }
+        else { const e = new Error('HTTP ' + res.status); e.status = res.status; noteRenderProblem('download', e); }
+      }catch(err){ noteRenderProblem('download', err); /* skip it */ }
     }
     return out;
   }
@@ -4280,12 +4311,20 @@
   // "build" in version.json and CACHE_VERSION in service-worker.js
   // (ark2-chorus-v<build>), then run `py tools/stamp.py` so every ?v= in
   // index.html and service-worker.js matches its file again -- the footer
-  // compares this page's build with version.json fetched live, to tell a
+  // compares this page's version with version.json fetched live, to tell a
   // fresh page from an old saved copy.
-  const APP_VERSION = 'v1.1.0';
+  // The number shown is V<APP_VERSION>.<build>.<patch>: APP_VERSION is the
+  // major version, APP_BUILD goes up with each release (patch back to 0),
+  // and APP_PATCH goes up with every code change in between. Keep all three
+  // in step with "version", "build" and "patch" in version.json.
+  const APP_VERSION = 1;
   const APP_BUILD = 109;
-  el('app-version').textContent = 'Ark2 Chorus — ' + APP_VERSION + ' · build ' + APP_BUILD;
-  el('app-version').insertAdjacentHTML('beforeend',
+  const APP_PATCH = 3;
+  const versionLabel = (v, b, p) => 'v' + v + '.' + b + '.' + p;
+  const APP_LABEL = versionLabel(APP_VERSION, APP_BUILD, APP_PATCH);
+  el('app-version').innerHTML = '<span class="av-name">Ark2 Chorus since 2007</span><span class="av-num"></span>';
+  el('app-version').lastChild.textContent = APP_LABEL;
+  el('app-version').lastChild.insertAdjacentHTML('beforeend',
     '<span class="ver-ok" id="ver-ok" title="Up to date" aria-label="Up to date" hidden>✓</span>');
 
   function updateStatus(cls, text){
@@ -4435,16 +4474,17 @@
       const res = await fetch('version.json?t=' + Date.now(), { cache: 'no-store' });
       if (!res.ok) throw new Error(res.status);
       const latest = await res.json();
-      if (+latest.build > APP_BUILD){
-        updateAsk(+latest.build);
+      const latestLabel = versionLabel(+latest.version || APP_VERSION, +latest.build, +latest.patch || 0);
+      if (+latest.build > APP_BUILD || (+latest.build === APP_BUILD && (+latest.patch || 0) > APP_PATCH)){
+        updateAsk(latestLabel);
         const box = el('app-update');
         el('ver-ok').hidden = true;
         box.className = 'app-update';
         box.textContent = '';
         const b = document.createElement('button');
         b.type = 'button';
-        b.textContent = 'Build ' + latest.build + ' available — tap to update';
-        b.addEventListener('click', () => forceFreshReload(latest.build));
+        b.textContent = latestLabel + ' available — tap to update';
+        b.addEventListener('click', () => forceFreshReload(latestLabel));
         box.appendChild(b);
       } else {
         updateStatus('', '');
@@ -4456,18 +4496,18 @@
   }
   // A new build is on the site: ask once per build per session. "Later"
   // leaves the small "tap to update" line on the home screen.
-  function updateAsk(build){
+  function updateAsk(label){
     let asked = '';
     try{ asked = sessionStorage.getItem('updAsked') || ''; }catch(err){ /* ignore */ }
-    if (asked === String(build) || !el('upd-pop').hidden) return;
-    el('upd-pop-text').innerHTML = 'Ark2 Chorus <b>build ' + build + '</b> is ready (you have build ' + APP_BUILD + '). Update now to get the latest changes.';
+    if (asked === label || !el('upd-pop').hidden) return;
+    el('upd-pop-text').innerHTML = 'Ark2 Chorus <b>' + label + '</b> is ready (you have ' + APP_LABEL + '). Update now to get the latest changes.';
     el('upd-pop').hidden = false;
     setTimeout(() => el('upd-pop-ok').focus(), 30);
     const close = () => {
       el('upd-pop').hidden = true;
-      try{ sessionStorage.setItem('updAsked', String(build)); }catch(err){ /* ignore */ }
+      try{ sessionStorage.setItem('updAsked', label); }catch(err){ /* ignore */ }
     };
-    el('upd-pop-ok').onclick = () => { close(); forceFreshReload(build); };
+    el('upd-pop-ok').onclick = () => { close(); forceFreshReload(label); };
     el('upd-pop-later').onclick = close;
     el('upd-pop').onclick = (e) => { if (e.target === el('upd-pop')) close(); };
   }
@@ -5219,14 +5259,14 @@
     const track = card && staffTracks.find(t => t.id === card.dataset.trackId);
     o.textContent = (open ? singerEmoji(track) + ' ' : '') + 'Rendered';
   }
-  // The rendered mic's waves move only while that part has a note sounding
+  // The rendered mic's waves (and the lead singer's notes) move only while that part has a note sounding
   // (not through its rests, and not while paused).
   function micLoop(){
     const beat = isPlaying ? currentBeat() : -1;
     staffTracks.forEach(t => {
       const card = document.querySelector(`.staff-card[data-track-id="${t.id}"]`);
       if (!card) return;
-      const on = beat >= 0 && t.instrument === 'recording' &&
+      const on = beat >= 0 && (t.instrument === 'recording' || (lyricsTrack && t.id === lyricsTrack.id)) &&
         t.events.some(e => beat >= e.time - 1e-6 && beat < e.time + e.dur);
       if (card.classList.contains('singing-now') !== on) card.classList.toggle('singing-now', on);
     });
