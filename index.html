@@ -23,7 +23,7 @@
 <script src="js/singer.js?v=af5f1a7eb3"></script>
 <script src="data/voicepack.js?v=4c0afdebe9"></script>
 <script src="js/voicepack.js?v=9915a7387b"></script>
-<link rel="stylesheet" href="css/app.css?v=d34a892692">
+<link rel="stylesheet" href="css/app.css?v=0b72e4cdb6">
 </head>
 <body>
 <input type="file" id="file-input" accept=".xml,.musicxml,.mxl,.mp3,.m4a,.wav,.ogg,.aac,.flac,.webm" multiple style="display:none;">
@@ -238,6 +238,10 @@
           <button class="icon-btn" id="zoom-out">−</button>
           <span class="zoom-val" id="zoom-val">60%</span>
           <button class="icon-btn" id="zoom-in">+</button>
+          <!-- touch screens only: pinch-zoom locked (default) / unlocked -->
+          <button class="icon-btn zoom-lock" id="zoom-lock" type="button" aria-pressed="true" title="Zoom locked — tap to unlock pinch zoom">
+            <svg viewBox="0 0 16 16" aria-hidden="true"><rect x="3" y="7" width="10" height="7.5" rx="1.5"></rect><path class="shackle" d="M5.5 7V5a2.5 2.5 0 0 1 5 0v2"></path></svg>
+          </button>
         </div>
       </div>
     </div>
@@ -531,7 +535,7 @@
 <script src="vendor/lame.min.js?v=c1991df998"></script>
 <script src="data/piano-samples.js?v=4974cea038"></script>
 <script src="data/choir-samples.js?v=fc02f79d45"></script>
-<script src="js/app.js?v=2c90ef71af"></script>
+<script src="js/app.js?v=6b2d677dec"></script>
 <script>
 if ('serviceWorker' in navigator) {
   window.addEventListener("load", () => {

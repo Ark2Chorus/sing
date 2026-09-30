@@ -4332,7 +4332,7 @@
   // in step with "version", "build" and "patch" in version.json.
   const APP_VERSION = 1;
   const APP_BUILD = 109;
-  const APP_PATCH = 28;
+  const APP_PATCH = 30;
   const versionLabel = (v, b, p) => 'v' + v + '.' + b + '.' + p;
   const APP_LABEL = versionLabel(APP_VERSION, APP_BUILD, APP_PATCH);
   el('app-version').innerHTML = '<span class="av-name">Ark2 Chorus since 2007</span><span class="av-num"></span>';
@@ -7034,16 +7034,65 @@
     if (v) v.textContent = Math.round(zoom * 100) + '%';
   }
   updateZoomDisplay();
-  el('zoom-in').addEventListener('click', () => {
-    zoom = Math.min(2, zoom + 0.1);
+  function setScoreZoom(z){
+    zoom = Math.round(Math.min(2, Math.max(0.5, z)) * 100) / 100;
     updateZoomDisplay();
     if (osmd){ osmd.zoom = zoom; osmd.render(); buildCursorTimeline(); }
-  });
-  el('zoom-out').addEventListener('click', () => {
-    zoom = Math.max(0.5, zoom - 0.1);
-    updateZoomDisplay();
-    if (osmd){ osmd.zoom = zoom; osmd.render(); buildCursorTimeline(); }
-  });
+  }
+  el('zoom-in').addEventListener('click', () => setScoreZoom(zoom + 0.1));
+  el('zoom-out').addEventListener('click', () => setScoreZoom(zoom - 0.1));
+  // Phones and tablets: pinch the score to zoom (the - / + buttons are
+  // hidden there). While the fingers move the drawn score is only stretched;
+  // when they lift it's redrawn sharply at the new size.
+  (() => {
+    const paper = el('score-paper'), box = el('osmd-container');
+    let pinch = null;
+    // Locked by default, so a stray two-finger touch never changes the
+    // layout; the choice is remembered on the device.
+    let zoomLocked = true;
+    try{ zoomLocked = localStorage.getItem('scoreZoomLocked') !== '0'; }catch(err){ /* locked */ }
+    const lockBtn = el('zoom-lock');
+    const paintLock = () => {
+      lockBtn.setAttribute('aria-pressed', zoomLocked ? 'true' : 'false');
+      lockBtn.title = zoomLocked ? 'Zoom locked — tap to unlock pinch zoom' : 'Pinch to zoom — tap to lock the zoom';
+      lockBtn.setAttribute('aria-label', lockBtn.title);
+    };
+    paintLock();
+    lockBtn.addEventListener('click', () => {
+      zoomLocked = !zoomLocked;
+      try{ localStorage.setItem('scoreZoomLocked', zoomLocked ? '1' : '0'); }catch(err){ /* ignore */ }
+      paintLock();
+    });
+    const dist = (t) => Math.hypot(t[0].clientX - t[1].clientX, t[0].clientY - t[1].clientY);
+    paper.addEventListener('touchstart', (e) => {
+      if (e.touches.length !== 2 || !osmd || zoomLocked) return;
+      const r = box.getBoundingClientRect();
+      const mx = (e.touches[0].clientX + e.touches[1].clientX) / 2 - r.left;
+      const my = (e.touches[0].clientY + e.touches[1].clientY) / 2 - r.top;
+      pinch = { d0: dist(e.touches), ratio: 1 };
+      box.style.transformOrigin = mx + 'px ' + my + 'px';
+      e.preventDefault();
+    }, { passive: false });
+    paper.addEventListener('touchmove', (e) => {
+      if (!pinch || e.touches.length < 2) return;
+      const lo = 0.5 / zoom, hi = 2 / zoom;               // stay within 50-200%
+      pinch.ratio = Math.min(hi, Math.max(lo, dist(e.touches) / pinch.d0));
+      box.style.transform = 'scale(' + pinch.ratio + ')';
+      el('zoom-val').textContent = Math.round(zoom * pinch.ratio * 100) + '%';
+      e.preventDefault();
+    }, { passive: false });
+    const end = (e) => {
+      if (!pinch || e.touches.length >= 2) return;
+      const ratio = pinch.ratio;
+      pinch = null;
+      box.style.transform = '';
+      box.style.transformOrigin = '';
+      if (Math.abs(ratio - 1) > 0.03) setScoreZoom(zoom * ratio);
+      else updateZoomDisplay();
+    };
+    paper.addEventListener('touchend', end);
+    paper.addEventListener('touchcancel', end);
+  })();
 
   // With autoResize off, we control redraws ourselves: nothing happens while the window
   // is actively being resized (keeps the drag itself smooth), then a single re-render +

@@ -527,6 +527,19 @@
     overflow-x:auto; cursor:pointer;
   }
   #osmd-container{min-height:120px;}
+  /* Touch screens zoom the score by pinching it, so the - / + buttons go;
+     the page itself doesn't zoom there, only the score. */
+  /* A lock beside the percentage: locked (default), pinching does nothing. */
+  .zoom-lock{ display:none; }
+  .zoom-lock svg{ width:14px; height:14px; fill:none; stroke:currentColor; stroke-width:1.6; stroke-linecap:round; stroke-linejoin:round; }
+  .zoom-lock .shackle{ transition:transform .15s ease; transform-origin:10.5px 7px; }
+  .zoom-lock[aria-pressed="false"]{ color:#4ade80; }
+  .zoom-lock[aria-pressed="false"] .shackle{ transform:translateY(-1.5px) rotate(28deg); }
+  @media (pointer: coarse){
+    #zoom-in, #zoom-out{ display:none !important; }
+    .zoom-lock{ display:inline-flex; align-items:center; justify-content:center; }
+    #score-paper{ touch-action:pan-x pan-y; }
+  }
 
   /* ---- Fixed bottom bar: mixer ---- */
   .bottom-mixer{
