@@ -4332,7 +4332,7 @@
   // in step with "version", "build" and "patch" in version.json.
   const APP_VERSION = 1;
   const APP_BUILD = 109;
-  const APP_PATCH = 38;
+  const APP_PATCH = 40;
   const versionLabel = (v, b, p) => 'v' + v + '.' + b + '.' + p;
   const APP_LABEL = versionLabel(APP_VERSION, APP_BUILD, APP_PATCH);
   el('app-version').innerHTML = '<span class="av-name">Ark2 Chorus since 2007</span><span class="av-num"></span>';
@@ -7583,13 +7583,26 @@
     const reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     sv.book = new PageFlip(holder, {
       width: sv.W, height: sv.H, size: 'fixed',
-      usePortrait: true, showCover: false, autoSize: true,
+      // autoSize would stretch the book to the viewer's width -- wide enough
+      // for a two-page spread, leaving the page on its right half.
+      usePortrait: true, showCover: false, autoSize: false,
       drawShadow: true, maxShadowOpacity: 0.55,
       flippingTime: reduce ? 250 : 900,
       showPageCorners: true, mobileScrollSupport: false, disableFlipByClick: true,
       swipeDistance: 30, startPage: sv.page - 1
     });
     sv.book.loadFromHTML(holder.querySelectorAll('.sv-leaf'));
+    // StPageFlip turns back by "pressing" a point that, one page at a time,
+    // isn't on a corner -- so with disableFlipByClick every back turn (the
+    // button and a swipe to the right alike) was ignored. Lift it for that
+    // one call; taps on the page still don't turn it.
+    { const book = sv.book, prev = book.flipPrev.bind(book);
+      book.flipPrev = (corner) => {
+        const set = book.getSettings();
+        set.disableFlipByClick = false;
+        try{ prev(corner); }finally{ set.disableFlipByClick = true; }
+      };
+    }
     sv.book.on('flip', (e) => {
       svZoomReset(true);
       sv.page = (e.data | 0) + 1;
@@ -7806,6 +7819,7 @@
   svAudio.crossOrigin = 'anonymous';
   svAudio.preload = 'none';
   let svAudioKey = '', svAudioUrl = null, svNotesKey = '', svNotesOpened = false, svNotesBusy = false, svAudioBusy = false, svCancel = false, svScrub = null, svAskParts = false;
+  const svOpenedTabs = new Set();   // Note Player tabs the viewer opened
   let svAudioList = [], svNotesList = [], svListsP = null, svTicker = null;
   const svStem = (name) => String(name || '').replace(/\.[^.]+$/, '');
   const svNorm = (t) => String(t || '').toLowerCase().replace(/[^a-z0-9]+/g, '');
@@ -7911,7 +7925,15 @@
   function svPlayStop(){
     clearInterval(svTicker);
     svAudio.pause(); svAudioBusy = false;
-    if (svNotesOpened){ goHome(); svNotesOpened = false; }
+    if (svNotesOpened || svOpenedTabs.size){
+      // The scores the viewer opened for its notes close with it; tabs that
+      // were already open stay.
+      stopPlayback();
+      svOpenedTabs.forEach(id => closeTab(id));
+      svOpenedTabs.clear();
+      if (scoreTabs.length) goHome();
+      svNotesOpened = false; svNotesKey = '';
+    }
     svStat('');
     svPaint();
   }
@@ -8162,6 +8184,7 @@
       const item = libItems.find(x => it.driveId ? x.driveId === it.driveId : x.offlineKey === it.key);
       if (!item) throw new Error('not found');
       const gen0 = loadGeneration, want = svStem(item.name), t0 = Date.now();
+      const before = new Set(scoreTabs.map(x => x.id));
       if (item.driveId) openDriveScore(item); else handleFile(item.file, item.recordings, item.offlineKey);
       // Wait for it to open (or for the tab it's already in to come forward).
       for (;;){
@@ -8173,6 +8196,7 @@
         if (Date.now() - t0 > 90000) throw new Error('timeout');
       }
       svNotesOpened = true;
+      if (!before.has(activeTabId)) svOpenedTabs.add(activeTabId);   // ours to close with the viewer
       svNotesKey = key;
       svStat('');
       if (!(await svChooseParts())) return;
