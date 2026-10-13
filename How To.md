@@ -5,6 +5,13 @@
 - **Enter your PIN** Enter your one time PIN. It is remembered on this device, so you only enter it again when it expires or changes.
 - **Switch players** by tapping **Ark2 Chorus ⌄** at the top left: **Note Player**, **Audio Player** or **Music Sheet**. Tapping the round logo takes you back to the home screen.
 
+## Getting your music into the app
+![How your music gets into the app](help/music-flow.svg)
+1. **You send your music** — sheet music (PDF or photo). Tap 📞 to reach us.
+2. **We (Ark2) encode it** — notes, voices and audio the app can play.
+3. **We upload it** to your designated **Online Drive**.
+4. **Open it in the app** — pick the folder under **Online Drive**, then tap **⬇️** to keep it for offline use.
+
 ## Note Player (Voices)
 1. Pick a folder from the list (☁ = Online Drive, 📥 = saved on this device).
 2. Icon🎙️with green color marks as the song is fully rendered. Else tap 📞 if not available.
