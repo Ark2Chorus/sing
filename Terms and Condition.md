@@ -1,8 +1,6 @@
 # Terms and Conditions
 
-*Last updated: October 13, 2026*
-
-By using the Ark2 Chorus app ("the app") you agree to these terms. If you do not agree, please do not use the app.
+By using the Ark2 Chorus app you agree to these terms.
 
 ## 1. Purpose of the app
 Ark2 Chorus is a practice tool for choir members. It plays sheet music, recordings and PDF scores so singers can learn and rehearse their parts.
@@ -10,16 +8,19 @@ Ark2 Chorus is a practice tool for choir members. It plays sheet music, recordin
 ## 2. Access PIN
 - Access to the app and its song folders is given by a **PIN**. Each PIN is for the person or group it was issued to.
 - **Do not share your PIN** with others. A PIN may be changed, limited or cancelled at any time, for example when it expires or is misused.
-- A PIN may have an **expiry period**. When it expires, contact us for a new one.
+- A PIN may have an **expiry period** with 6 months standard user. When it expires, contact us for a new one free of charge.
 
 ## 3. Subscriptions and support
 - By subscribing to this app you support our church building project at **Mandaue City Central Seventh-day Adventist Church**, Maguikay, Mandaue City, Cebu.
 - Subscription fees, if any, are contributions to that project and are **not refundable** once a PIN has been issued, unless we decide otherwise.
+- A digital copy of a church offical reciept send to your email if provided or via Facebook messenger upon request.
 
 ## 4. Music and content
 - The songs, scores, recordings and sheets in the app are provided **for personal practice and church use only**.
 - **Do not copy, share, sell, upload or redistribute** any content from the app without permission. Some content may be protected by copyright and belongs to its respective owners.
 - Rendered (computer-generated) voices are practice aids and may not sound exactly like a real singer.
+- Encoded music will be stored in the online drive only for your account and Ark2 will not use or reproduce a copy of it.
+- A trimmed copy (Piano music only) will be stored in the online drive to use for the choir member. Piano copy will be stored only upon request.
 
 ## 5. Privacy
 - The app does **not** ask for your name, email or phone number to work.
@@ -43,3 +44,5 @@ We may update these terms from time to time. The latest version is always availa
 For questions, PIN requests or support, use the contact details shown in the app.
 
 *Enjoy singing for the Lord. To God be the Glory!*
+
+*Last updated: October 1, 2026*
