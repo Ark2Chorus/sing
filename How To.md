@@ -1,71 +1,83 @@
-# How to use Ark2 Chorus App
-
-## Getting started
-- **Install the app** so it works offline: on Android open the link in **Chrome**, tap the **⋮** menu and choose **Install app / Add to Home screen**. On iPhone open it in **Safari**, tap **Share**, then **Add to Home Screen**.
-- **Enter your PIN** Enter your one time PIN. It is remembered on this device, so you only enter it again when it expires or changes.
-- **Switch players** by tapping **Ark2 Chorus ⌄** at the top left: **Note Player**, **Audio Player** or **Music Sheet**. Tapping the round logo takes you back to the home screen.
-
-## Getting your music into the app
-![How your music gets into the app](help/music-flow.svg)
-1. **You send your music** — sheet music (PDF or photo). Tap 📞 to reach us.
-2. **We (Ark2) encode it** — notes, voices and audio the app can play.
-3. **We upload it** to your designated **Online Drive**.
-4. **Open it in the app** — pick the folder under **Online Drive**, then tap **⬇️** to keep it for offline use.
-
-## Note Player (Voices)
-1. Pick a folder from the list (☁ = Online Drive, 📥 = saved on this device).
-2. Icon🎙️with green color marks as the song is fully rendered. Else tap 📞 if not available.
-3. Tap a score to open it. The notes scroll as the music plays.
-4. Press **Play**. Use the **mixer** at the bottom to change each part's volume, **Solo** or **Mute** a part, or choose its voice.
-5. Where available, choose **Rendered** for a part to hear a recorded singer instead of the built-in voice.
-6. Use the **tempo** slider to practise slower or faster (70–130%). Douple tap the slide to return to original tempo.
-7. Piano is hidden by default, Tap the 🎹 3x to show the piano staff. 
-8. Hide/Unhide the staff by tapping 👁️.
-
-## Note Player (Controls)
- - **Lyrics**
-	- Tap the lyrics tab, Select any voice then play ▶️.
-	- Toggle the piano, if the music is a piano song. 
-	- If you want other voice join you in singing click the solo button in the mixer.
-	- Adjust the mixer volume at you prefered loudness. 
-- **Mixer**
-	- Select any voices from the mixer dropdown list.
-	- Tap 👁️ to display specific staff.
-	- Solo, it will sing 🎤 specific voice alone. Tap other solo to join in singing.
-	- Adjust the staff volume by sliding up or down. 	
-- **Piano**
-    - Connect a Midi Piano to record.
-	- Click the export button button to download audio files. (4 Options available check it out)
-	- Use the slider to view the lower or higher piano keys.
-	- Play the piano by tapping the key.
-
-## Audio Player 
-1. Pick an option from the online drive or on this device.
-2. Tap a song to play it. Drag the progress bar to jump to any point or tap jump icon +/- beside the play button.
-3. Drag the tunning disk 💽 to jump the playing time.
-
-## Music Sheet (PDF Files)
-1. Pick a folder and tap a sheet to open it.
-2. Swipe or tap the arrows to turn pages.
-3. Use the header to play along: choose 🎧 or the score's (clef), then press its play button. The ring around the button shows progress; press and drag it to jump.
-
-## Saving Files for offline use
-- On the **Online Drive** Dropdown list, select any foloder. (Online Drive available only when there's internet).
-- Click **Download** button or **⬇️** icon to download the files. An individual download has also **⬇️** icon beside the file.
-
-## Deleting Files to Save Space
-- In the **DropDown List** Select a folder under the **On this device**
-- In the loaded files tap 🗑 button beside a saved item
-
-
-## Internet and updates
-- The **Wi‑Fi mark** at the top right shows whether you are online. Tap it to test the connection: a **✓** means the internet works, **✕** means no connection.
-- When a new version of the app is ready, you will see **Update available**. Tap **Update now** to get it.
-
-## Need help?
-- Happy to hear you 💕💕💕
-- Tap 📞 for more details
-
-
-
-🤷‍♂️🤷🎤Let's sing together for the Glory of the Lord🎤🤷‍♂️🤷‍♀️
+ARK2~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

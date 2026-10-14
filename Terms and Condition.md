@@ -1,48 +1,73 @@
-# Terms and Conditions
-
-By using the Ark2 Chorus app you agree to these terms.
-
-## 1. Purpose of the app
-Ark2 Chorus is a practice tool for choir members. It plays sheet music, recordings and PDF scores so singers can learn and rehearse their parts.
-
-## 2. Access PIN
-- Access to the app and its song folders is given by a **PIN**. Each PIN is for the person or group it was issued to.
-- **Do not share your PIN** with others. A PIN may be changed, limited or cancelled at any time, for example when it expires or is misused.
-- A PIN may have an **expiry period** with 6 months standard user. When it expires, contact us for a new one free of charge.
-
-## 3. Subscriptions and support
-- By subscribing to this app you support our church building project at **Mandaue City Central Seventh-day Adventist Church**, Maguikay, Mandaue City, Cebu.
-- Subscription fees, if any, are contributions to that project and are **not refundable** once a PIN has been issued, unless we decide otherwise.
-- A digital copy of a church offical reciept send to your email if provided or via Facebook messenger upon request.
-
-## 4. Music and content
-- The songs, scores, recordings and sheets in the app are provided **for personal practice and church use only**.
-- **Do not copy, share, sell, upload or redistribute** any content from the app without permission. Some content may be protected by copyright and belongs to its respective owners.
-- Rendered (computer-generated) voices are practice aids and may not sound exactly like a real singer.
-- Encoded music will be stored in the online drive only for your account and Ark2 will not use or reproduce a copy of it.
-- A trimmed copy (Piano music only) will be stored in the online drive to use for the choir member. Piano copy will be stored only upon request.
-
-## 5. Privacy
-- The app does **not** ask for your name, email or phone number to work.
-- To manage PIN access and prevent PIN sharing, once a day the app records for each device: a **random device ID**, a fingerprint of your PIN (never the PIN itself), the date, the device's **IP address** and its **approximate location** (city, region and country, estimated from the IP address — not GPS).
-- The IP address and approximate location are looked up through a third-party IP lookup service (**ipwho.is**, or **ipinfo.io** if it is unavailable).
-- This information is kept in a private list managed by the app administrator and is used **only** to manage access to the app. It is not sold or shared.
-- Songs you save for offline use are stored **only on your device**.
-
-## 6. Availability
-- The app is provided **"as is"**. We do our best to keep it working, but we do not guarantee it will always be available, error-free, or that every song will be available at all times.
-- Shared folders need an internet connection; saved copies work offline.
-- We may update, change or remove features and content at any time.
-
-## 7. Limitation of liability
-We are not responsible for any loss or damage resulting from the use of, or inability to use, the app, including data stored on your device.
-
-## 8. Changes to these terms
-We may update these terms from time to time. The latest version is always available from the **?** (Help) button in the app. Continuing to use the app means you accept the updated terms.
-
-## 9. Contact
-For questions, PIN requests or support, use the contact details shown in the app.
-
-*Enjoy singing for the Lord. To God be the Glory!*
-
-*Last updated: October 1, 2026*
+ARK2~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
+VDMFTA5TGXE5QkYfOCUfGW9gWAYUZVISYQ==
