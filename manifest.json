@@ -2,7 +2,7 @@
   "name": "Ark2 Chorus — Sing by Ear",
   "short_name": "Ark2 Chorus",
   "description": "Sheet music stand with real-voice singing playback for MusicXML scores.",
-  "start_url": "./index.html",
+  "start_url": "./",
   "scope": "./",
   "display": "standalone",
   "orientation": "portrait",
